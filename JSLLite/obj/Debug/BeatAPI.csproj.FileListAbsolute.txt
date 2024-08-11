@@ -1,0 +1,262 @@
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\BeatAPI.dll.config
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\BeatAPI.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\BeatAPI.pdb
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\Antlr3.Runtime.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\EntityFramework.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\Microsoft.Web.Infrastructure.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\Newtonsoft.Json.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Cors.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Helpers.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Http.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Mvc.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Optimization.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Providers.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Razor.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.WebPages.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\WebGrease.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\Newtonsoft.Json.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Http.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\EntityFramework.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Helpers.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Mvc.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.Razor.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.WebPages.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.xml
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CoreCompileInputs.cache
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CopyComplete
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\BeatAPI.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\BeatAPI.pdb
+D:\Dot Net New\BeatAPI\BeatAPI\bin\BeatAPI.dll.config
+D:\Dot Net New\BeatAPI\BeatAPI\bin\BeatAPI.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\BeatAPI.pdb
+D:\Dot Net New\BeatAPI\BeatAPI\bin\Antlr3.Runtime.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\EntityFramework.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\Microsoft.Web.Infrastructure.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\Newtonsoft.Json.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Cors.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Helpers.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Http.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Mvc.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Optimization.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Providers.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Razor.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.WebPages.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\WebGrease.dll
+D:\Dot Net New\BeatAPI\BeatAPI\bin\Newtonsoft.Json.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Http.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\EntityFramework.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Helpers.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Mvc.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.Razor.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.WebPages.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.xml
+D:\Dot Net New\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.xml
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CoreCompileInputs.cache
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CopyComplete
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\BeatAPI.dll
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\BeatAPI.pdb
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\Interop.DAO.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\Interop.MSXML2.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\Interop.VBA.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.ResolveComReference.cache
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\Interop.Busy2184.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\Interop.BusyDDC2184.dll
+\\server-pc\Latest Codes\FY (2020-21)\Dot Net\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.AssemblyReference.cache
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\Interop.Busy2184.dll
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\Interop.BusyDDC2184.dll
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\Interop.DAO.dll
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\Interop.MSXML2.dll
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\Interop.VBA.dll
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.ResolveComReference.cache
+D:\Dot Net New\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.AssemblyReference.cache
+D:\Atul\API\BeatAPI\BeatAPI\bin\BeatAPI.dll.config
+D:\Atul\API\BeatAPI\BeatAPI\bin\BeatAPI.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\BeatAPI.pdb
+D:\Atul\API\BeatAPI\BeatAPI\bin\Antlr3.Runtime.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\EntityFramework.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\Microsoft.Web.Infrastructure.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\Newtonsoft.Json.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Cors.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Helpers.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Http.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Mvc.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Optimization.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Providers.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Razor.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\WebGrease.dll
+D:\Atul\API\BeatAPI\BeatAPI\bin\Newtonsoft.Json.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Http.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\EntityFramework.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Helpers.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Mvc.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.Razor.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.xml
+D:\Atul\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.xml
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\Interop.Busy2184.dll
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\Interop.BusyDDC2184.dll
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\Interop.DAO.dll
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\Interop.MSXML2.dll
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\Interop.VBA.dll
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.ResolveComReference.cache
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CoreCompileInputs.cache
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CopyComplete
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.dll
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.pdb
+D:\Atul\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.AssemblyReference.cache
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\BeatAPI.dll.config
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\BeatAPI.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\BeatAPI.pdb
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\Antlr3.Runtime.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\EntityFramework.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\Microsoft.Web.Infrastructure.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\Newtonsoft.Json.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Cors.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Helpers.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Mvc.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Optimization.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Providers.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Razor.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\WebGrease.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\Newtonsoft.Json.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\EntityFramework.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Helpers.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Mvc.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Razor.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.xml
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\Interop.Busy2184.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\Interop.BusyDDC2184.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\Interop.DAO.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\Interop.MSXML2.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\Interop.VBA.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.ResolveComReference.cache
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CoreCompileInputs.cache
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CopyComplete
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.dll
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.pdb
+D:\Atul\ATUL\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.AssemblyReference.cache
+D:\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\Interop.Busy2184.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\Interop.BusyDDC2184.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\Interop.DAO.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\Interop.MSXML2.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\Interop.VBA.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.ResolveComReference.cache
+D:\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CoreCompileInputs.cache
+D:\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.pdb
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\BeatAPI.dll.config
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\BeatAPI.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\BeatAPI.pdb
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\Antlr3.Runtime.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\EntityFramework.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\Microsoft.Web.Infrastructure.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\Newtonsoft.Json.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Cors.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Helpers.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Mvc.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Optimization.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Providers.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Razor.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\WebGrease.dll
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\Newtonsoft.Json.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\EntityFramework.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Helpers.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Mvc.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.Razor.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.xml
+D:\Atul Code\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CopyComplete
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\BeatAPI.dll.config
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\BeatAPI.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\BeatAPI.pdb
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\Antlr3.Runtime.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\EntityFramework.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\Microsoft.Web.Infrastructure.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\Newtonsoft.Json.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Cors.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Helpers.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Http.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Mvc.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Optimization.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Providers.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Razor.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\WebGrease.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\Newtonsoft.Json.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Net.Http.Formatting.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Http.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Http.Cors.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Http.WebHost.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\EntityFramework.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Helpers.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Mvc.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.Razor.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Deployment.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\bin\System.Web.WebPages.Razor.xml
+D:\AtulCode\API\BeatAPI\BeatAPI\obj\Debug\Interop.Busy2184.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\obj\Debug\Interop.BusyDDC2184.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\obj\Debug\Interop.DAO.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\obj\Debug\Interop.MSXML2.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\obj\Debug\Interop.VBA.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.ResolveComReference.cache
+D:\AtulCode\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CoreCompileInputs.cache
+D:\AtulCode\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.csproj.CopyComplete
+D:\AtulCode\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.dll
+D:\AtulCode\API\BeatAPI\BeatAPI\obj\Debug\BeatAPI.pdb
