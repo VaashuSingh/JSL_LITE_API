@@ -216,7 +216,7 @@ namespace JSL_LITE.Controllers
                 string constr = GetConnectionString(Provider, CompCode, FY);
                 SQLHELPER con = new SQLHELPER(constr);
 
-                string sql = $"SELECT 'Quotation' AS Name, COUNT(VchCode) AS Value FROM ESJSLTRAN1 UNION ALL SELECT 'Pending Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 0 UNION ALL SELECT 'Completed Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 1 UNION ALL SELECT 'Replacement', COUNT(*) UNION ALL SELECT 'Invoice' , Count(23) FROM ESJSLTRAN1 WHERE QStatus = 2";
+                string sql = $"SELECT 'Quotation' AS Name, COUNT(VchCode) AS Value FROM ESJSLTRAN1 UNION ALL SELECT 'Pending Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 1 UNION ALL SELECT 'Completed Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 1 UNION ALL SELECT 'Replacement', COUNT(*) UNION ALL SELECT 'Invoice' , Count(23) FROM ESJSLTRAN1 WHERE QStatus = 2";
                 DataTable DT1 = con.getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
@@ -603,6 +603,7 @@ namespace JSL_LITE.Controllers
         [HttpPost]
         public dynamic SaveQuatationData(TransactionData obj, string CompCode, string FY)
         {
+            int Status = 0; string StatusStr = string.Empty;
             try
             {
                 string constr = GetConnectionString(Provider, CompCode, FY);
@@ -616,7 +617,6 @@ namespace JSL_LITE.Controllers
                 {
                     new SqlParameter("@VchNo", SqlDbType.VarChar, 40) { Value = vchNo },
                     new SqlParameter("@AutoVchNo", SqlDbType.Int) { Value = autoNo },
-                    new SqlParameter("@Date", SqlDbType.DateTime) { Value = obj.Date },
                     new SqlParameter("@CustId", SqlDbType.Int) { Value = obj.CustId },
                     new SqlParameter("@CustName", SqlDbType.VarChar, 100) { Value = obj.CustName },
                     new SqlParameter("@CMobile", SqlDbType.VarChar, 50) { Value = obj.CMobile },
@@ -628,17 +628,21 @@ namespace JSL_LITE.Controllers
                 };
 
                 // Execute the stored procedure
-                var result = objcon.ExecuteProcedure("sp_SaveQuatationTransactionData", parameters);
+                DataTable DT1 = objcon.getTable("sp_SaveQuatationTransactionData", parameters);
 
-              
-
-                return new { Status = 1, Msg = "Data saved successfully" };
-
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    Status = Convert.ToInt32(DT1.Rows[0]["Status"]);
+                    StatusStr = DT1.Rows[0]["Msg"].ToString();
+                }
             }
             catch (Exception ex)
             {
-                return new { Status = "Error", Msg = ex.Message.ToString() };
+                return new { Status = 0, Msg = ex.Message.ToString() };
             }
+#pragma warning disable IDE0037 // Use inferred member name
+            return new { Status = Status, Msg = StatusStr };
+#pragma warning restore IDE0037 // Use inferred member name
         }
 
         [HttpGet]
@@ -655,7 +659,7 @@ namespace JSL_LITE.Controllers
                 string formattedEndDate = string.IsNullOrEmpty(EndDate) ? "" : Busyhelper.FormatDate(EndDate);
                 int QStatus = Status == 1 ? 0 : Status == 2 ? 1 : Status == 3 ? 2 : 0;
 
-                string sql = $"Select [VchCode],IsNull([VchNo], '') as VchNo, Convert(Varchar, [Date], 105) as Date, IsNull([CustId], 0) as CustId, IsNull([CustName], '') as CustName, IsNull([CMobile], '') as CMobile,IsNull([TotQty], 0) as TotQty,IsNull([TotAmt], 0) as TotAmt,IsNull([NetAmount], 0) as NetAmt,IsNull([QStatus], 0) as QStatus From ESJSLTRAN1 Where [CreatedBy] = '{Users}'";
+                string sql = $"Select [VchCode],IsNull([VchNo], '') as VchNo, Convert(Varchar, [Date], 105) as Date, IsNull([CustId], 0) as CustId, IsNull([CustName], '') as CustName, IsNull([CMobile], '') as CMobile,IsNull([TotQty], 0) as TotQty,IsNull([TotAmt], 0) as TotAmt,IsNull([NetAmount], 0) as NetAmt,IsNull([QStatus], 0) as QStatus From ESJSLTRAN1 Where [CreatedBy] = '{Users}' And VchType = 108";
                 if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And Date >= '{formattedStartDate}' And Date <= '{formattedEndDate}'";
                 if (Status != 0) sql += $" And [QStatus] = {QStatus}";
                 DataTable DT1 = obj.getTable(sql);
@@ -746,34 +750,35 @@ namespace JSL_LITE.Controllers
 
                 if (DT1 > 0)
                 {
-                    new SQLHELPER(constr).ExecuteSQL("Delete From ESJSLREFTRAN Where VchCode = " + obj.VchCode + " And Vchtype = 108");
+                    new SQLHELPER(constr).ExecuteSQL("Delete ESJSLREFTRAN Where VchCode = " + obj.VchCode + " And Vchtype = 108");
 
-                    sql = $"Select A.VchCode, ISNULL(A.[VchNo], '') as RefNo, A.[Date], ISNULL(A.[CustId], 0) as AccCode, B.[SNo], ISNULL(B.[ItemCode], 0) as ItemCode, ISNULL(B.[Qty], 0) as Qty, ISNULL(B.[Price], 0) as Price, ISNULL(B.[Amount], 0) as Amount From ESJSLTRAN1 A Inner Join ESJSLTRAN2 B On A.VchCode = B.VchCode And A.VchType = B.VchType Where A.[VchCode] = {obj.VchCode} And A.[Vchtype] = 108 Order By B.[SNo]";
+                    sql = $"Select A.VchCode, ISNULL(A.[VchNo], '') as RefNo, CONVERT(VARCHAR, A.[Date], 105) as Date, ISNULL(A.[CustId], 0) as AccCode, B.[SNo], ISNULL(B.[ItemCode], 0) as ItemCode, ISNULL(B.[Qty], 0) as Qty, ISNULL(B.[Price], 0) as Price, ISNULL(B.[Amount], 0) as Amount From ESJSLTRAN1 A Inner Join ESJSLTRAN2 B On A.VchCode = B.VchCode And A.VchType = B.VchType Where A.[VchCode] = {obj.VchCode} And A.[Vchtype] = 108 Order By B.[SNo]";
                     DataTable DT2 = new SQLHELPER(constr).getTable(sql);
 
                     if (DT2 != null && DT2.Rows.Count > 0)
                     {
                         foreach (DataRow item in DT2.Rows)
                         {
-                            sql = $"Insert Into ESJSLREFTRAN ([VchCode], [VchType], [RecType], [Method], [RefNo], [Date], [MasterCode1], [ItemCode], [Qty], [Price], [Amount], [OrderId]) Values ({clsMain.MyInt(item["VchCode"])}, 108, 1, 1, '{clsMain.MyString(item["RefNo"])}', '{item["Date"]}', {clsMain.MyInt(item["AccCode"])}, {clsMain.MyInt(item["ItemCode"])}, {Convert.ToDecimal(item["Qty"])}, {Convert.ToDecimal(item["Price"])}, {Convert.ToDecimal(item["Amount"])}, {clsMain.MyInt(item["VchCode"])})";
-                            int DT3 = conobj.ExecuteSQL(sql);
+                            string formattedDt = Busyhelper.FormatDate(Convert.ToString(item["Date"]));
+                            sql = $"Insert Into ESJSLREFTRAN ([VchCode], [VchType], [RecType], [Method], [RefNo], [Date], [MasterCode1], [ItemCode], [Qty], [Price], [Amount], [OrderId]) Values ({clsMain.MyInt(item["VchCode"])}, 108, 1, 1, '{clsMain.MyString(item["RefNo"])}', '{formattedDt}', {clsMain.MyInt(item["AccCode"])}, {clsMain.MyInt(item["ItemCode"])}, {Convert.ToDecimal(item["Qty"])}, {Convert.ToDecimal(item["Price"])}, {Convert.ToDecimal(item["Amount"])}, {clsMain.MyInt(item["VchCode"])})";
+                            int DT3 = new SQLHELPER(constr).ExecuteSQL(sql);
 
-                            if (DT3 == 0) { throw new Exception("Unable To Connect To Company"); }
+                            if (DT3 == 0) { throw new Exception("Unable To Connect To Company1"); }
                         }
                     }
                     else
                     {
-                        throw new Exception("Unable To Connect To Company");
+                        throw new Exception("Unable To Connect To Company2");
                     }
                 }
                 else
                 {
-                    throw new Exception("Unable To Connect To Company");
+                    throw new Exception("Unable To Connect To Company3");
                 }
             }
-            catch (Exception err)
+            catch (Exception ex)
             {
-                return new { Status = -1, Msg = err.Message.ToString().Trim() };
+                return new { Status = 0, Msg = ex.Message.ToString().Trim() };
             }
             return new { Status = 1, Msg = obj.APCode == 1 ? "Approved Successfully !!!" : "Rejection Successfully !!!" };
         }
@@ -923,15 +928,19 @@ namespace JSL_LITE.Controllers
         [HttpPost]
         public dynamic SaveStockTransferData(STVchDetail obj, string CompCode , string Fy)
         {
-            object VchCode = 0; 
+            object VchCode = 0;
+            int STBusyCode = 0;
+            int Status = 0;
+            string StatusStr = string.Empty;
+            string errMsg = string.Empty;
+            CFixedInterface FI = new CFixedInterface();
             try
             {
-                CFixedInterface FI = new CFixedInterface();
                 BusyVoucher BusyVch = new BusyVoucher();
                 string constr = GetConnectionString(Provider, CompCode, Fy);
                 SQLHELPER conobj = new SQLHELPER(constr);
                 var series = GetSeriesConfigDetails(constr);
-                var srdata = series.serieslist; int STBusyCode = 0;
+                var srdata = series.serieslist;
                 string seriesname = series.serieslist.SeriesName; string tmcname = series.serieslist.TMCName;
                 string vchNo = GetQuatationVchNo(constr, Convert.ToInt32(109), Convert.ToInt32(2), out int autoNo);
                 //string formattedDate = DateTime.Now.ToString("dd-MM-yyyy"); // Format the date as 'YYYY-MM-DD hh:mm:ss'
@@ -949,20 +958,12 @@ namespace JSL_LITE.Controllers
                 }
 
                 // Save Stock Transfer Invoice
-                if (!SaveVoucherFromXML(5, xmlstr, ref VchCode, FI, out string errMsg))
+                if (!SaveVoucherFromXML(5, xmlstr, ref VchCode, FI, out errMsg))
                 {
                     throw new Exception(errMsg);
                 }
 
                 STBusyCode = clsMain.MyInt(VchCode);
-
-
-                //Check For Valid Busy VchCode
-                if (STBusyCode <= 0)
-                {
-                    if (STBusyCode > 0) { DeleteVoucher(FI, STBusyCode, out errMsg); }
-                    throw new Exception("Posting not done......." + ", "+  errMsg);
-                }
 
                 string XmlData = CreateXML(obj.STItemDetails);
 
@@ -989,14 +990,30 @@ namespace JSL_LITE.Controllers
                 };
 
                 // Execute the stored procedure
-                var result = conobj.ExecuteProcedure("[sp_SaveStockTransferTran]", parameters);
+                DataTable result = conobj.getTable("[sp_SaveStockTransferTran]", parameters);
 
+                if (result != null && result.Rows.Count > 0)
+                {
+                    Status = Convert.ToInt32(result.Rows[0]["Status"]);
+                    StatusStr = result.Rows[0]["Msg"].ToString();
+                }
+
+                // Check the status returned by the stored procedure
+                if (Status == 0)
+                {
+                    if (STBusyCode > 0)
+                    {
+                        DeleteVoucher(FI, STBusyCode, out errMsg);
+                    }
+                    throw new Exception(StatusStr + "," + errMsg);
+                }
             }
             catch (Exception ex)
             {
+                if (STBusyCode > 0) { DeleteVoucher(FI, STBusyCode, out errMsg); };
                 return new { Status = 0, Msg = ex.Message.ToString(), };
             }
-            return new { Status = 1, Msg = "Success", VchCode = VchCode };
+            return new { Status = Status, Msg = StatusStr, VchCode = STBusyCode };
         }
 
         [HttpGet]
@@ -1046,6 +1063,7 @@ namespace JSL_LITE.Controllers
             return new { Status = 1, Msg = "Success", Data = slist };
         }
 
+        [HttpGet]
         public dynamic GetStockTransferItemsDetails(string CompCode, string FY, int VchCode)
         {
             List<GetVchItemsDT> sitem = new List<GetVchItemsDT>();
@@ -1084,6 +1102,38 @@ namespace JSL_LITE.Controllers
             }
             return new { Status = 1, Msg = "Success", Data = sitem };
         }
+
+        [HttpGet]
+        public dynamic GetPackingInStockTransferCustomerWiseDt(string CompCode, string FY)
+        {
+            List<UnknowList> clist = new List<UnknowList>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER conobj = new SQLHELPER(constr);
+
+                string sql = $"Select IsNull(A.MasterCode1, 0) As AccCode, IsNull(C.[Name], '') as AccName from ESJSLRefTran A inner Join ESJSLCustomer C On A.MasterCode1 = C.Code Inner Join ESJSLTran1 T1 On A.OrderID = T1.VchCode Where A.RecType = 1 And T1.VchType = 109 And T1.QStatus = 0 Group by A.MasterCode1, C.[Name] Having Sum(A.Qty) >= 0.01";
+                DataTable DT1 = conobj.getTable(sql);
+
+                if(DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach( DataRow item in DT1.Rows) 
+                    { 
+                        clist.Add(new UnknowList
+                        {
+                            Code = Convert.ToInt32(item["AccCode"]),
+                            Name = clsMain.MyString(item["AccName"]),
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString(), Data = clist };
+            }
+            return new { Status = 1, Msg = "Success", Data = clist };
+        }
+
         private bool SaveVoucherFromXML(int VchType, string xmlStr, ref object VchCode, CFixedInterface fi, out string errMsg)
         {
             object err = "";

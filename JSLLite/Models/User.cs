@@ -8,6 +8,11 @@ using System.Data.Entity.Infrastructure;
 
 namespace JSLLite.Models
 {
+    public class UnknowList
+    {
+        public int Code { get; set; }
+        public string Name { get; set; }
+    }
     public class User
     {
         public string UserName { get; set; }
@@ -99,9 +104,6 @@ namespace JSLLite.Models
 
     public class TransactionData
     {
-        public string VchNo { get; set; }
-        public string Date { get; set; }
-        public int AutoVchNo { get; set; }
         public int CustId { get; set; }
         public string CustName { get; set; }
         public string CMobile { get; set; }
