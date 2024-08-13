@@ -161,7 +161,22 @@ namespace JSLLite.Models
         public string QName { get; set; }
     }
 
-    public class GetQuotationVchItemsDT
+    public class GetSTVchDT
+    {
+        public int VchCode { get; set; }
+        public string Date { get; set; }
+        public string VchNo { get; set; }
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Mobile { get; set; }
+        public decimal TQty { get; set; }
+        public decimal TAmt { get; set; }
+        public decimal NetAmt { get; set; }
+        public string Remarks { get; set; }
+        public int BusyVchCode { get; set; }
+    }
+
+    public class GetVchItemsDT
     {
         public int VchCode { get; set; }
         public int SNo { get; set; }
@@ -282,6 +297,7 @@ namespace JSLLite.Models
         public int TMCCode { get; set; }
         public string TMCName { get; set; }
     }
+
 
     public class SLogo
     {

@@ -9,11 +9,9 @@ using ESCommon;
 
 namespace JSLLite.Models
 {
-   
-       
     public class Busyhelper
     {
-        CFixedInterface FI = new CFixedInterface();
+        readonly CFixedInterface FI = new CFixedInterface();
         int Provider = clsMain.MyInt(ConfigurationManager.AppSettings["Provider"]);
         string BusyPath = ConfigurationManager.AppSettings["BusyPath"];
         string BusyDataPath = ConfigurationManager.AppSettings["BusyDataPath"];

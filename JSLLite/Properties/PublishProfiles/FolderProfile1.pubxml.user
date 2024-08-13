@@ -5,7 +5,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <_PublishTargetUrl>D:\!\RAJA SINGH\2023\Raja Kumar\.Net\MVC\JSLLite\JSLLite\Publish</_PublishTargetUrl>
-    <History>True|2024-08-08T12:12:24.6794133Z;True|2024-08-02T11:37:33.8322331+05:30;True|2023-08-23T12:06:51.8890222+05:30;</History>
+    <History>True|2024-08-12T07:16:12.3746879Z;True|2024-08-08T17:42:24.6794133+05:30;True|2024-08-02T11:37:33.8322331+05:30;True|2023-08-23T12:06:51.8890222+05:30;</History>
   </PropertyGroup>
   <ItemGroup>
     <File Include="bin/Antlr3.Runtime.dll">
@@ -27,10 +27,10 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>07/30/2024 13:29:21</publishTime>
     </File>
     <File Include="bin/JSLLite.dll">
-      <publishTime>08/08/2024 17:42:23</publishTime>
+      <publishTime>08/12/2024 12:46:10</publishTime>
     </File>
     <File Include="bin/JSLLite.pdb">
-      <publishTime>08/08/2024 17:42:23</publishTime>
+      <publishTime>08/12/2024 12:46:10</publishTime>
     </File>
     <File Include="bin/Microsoft.Web.Infrastructure.dll">
       <publishTime>07/25/2012 17:18:56</publishTime>
@@ -294,7 +294,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>08/23/2020 21:20:02</publishTime>
     </File>
     <File Include="packages.config">
-      <publishTime>09/25/2023 12:05:25</publishTime>
+      <publishTime>08/08/2024 18:16:57</publishTime>
     </File>
     <File Include="Scripts/jquery-1.7.1.js">
       <publishTime>08/23/2020 21:20:18</publishTime>
@@ -354,7 +354,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>08/23/2020 21:20:02</publishTime>
     </File>
     <File Include="Web.config">
-      <publishTime>08/02/2024 11:37:32</publishTime>
+      <publishTime>08/12/2024 12:46:11</publishTime>
     </File>
   </ItemGroup>
 </Project>

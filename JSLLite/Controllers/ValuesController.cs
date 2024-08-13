@@ -34,7 +34,7 @@ using Busy2184;
 //http://103.25.128.155/SFAApi/CatalogImages/
 //http://103.207.64.9:99/SFA/CatalogImages/
 
-namespace JSLLite.Controllers
+namespace JSL_LITE.Controllers
 
 {
     //[EnableCors(origins: "*", headers: "*", methods: "*")]
@@ -630,6 +630,8 @@ namespace JSLLite.Controllers
                 // Execute the stored procedure
                 var result = objcon.ExecuteProcedure("sp_SaveQuatationTransactionData", parameters);
 
+              
+
                 return new { Status = 1, Msg = "Data saved successfully" };
 
             }
@@ -691,22 +693,22 @@ namespace JSLLite.Controllers
         }
 
         [HttpGet]
-        public dynamic GetQuotationItemsDetails(int VchCode, string CompCode, string FY)
+        public dynamic GetQuotationItemsDetails(string CompCode, string FY, int VchCode)
         {
-            List<GetQuotationVchItemsDT> ilist = new List<GetQuotationVchItemsDT>();
+            List<GetVchItemsDT> ilist = new List<GetVchItemsDT>();
             try
             {
                 string constr = GetConnectionString(Provider, CompCode, FY);
                 SQLHELPER obj = new SQLHELPER(constr); var sno = 1;
 
-                string sql = $"Select A.[VchCode], IsNull(A.[ItemCode], 0) as ItemCode, IsNull(B.[Name], '') as ItemName, IsNull(A.[Qty], 0) as Qty, IsNull(A.[Price], 0) as Price, IsNull(A.[Amount], 0) as Amount From ESJSLTRAN2 A INNER JOIN Master1 B On A.ItemCode = B.Code Where A.[VchCode] = {VchCode} Order By B.[Name]";
+                string sql = $"Select A.[VchCode], IsNull(A.[ItemCode], 0) as ItemCode, IsNull(B.[Name], '') as ItemName, IsNull(A.[Qty], 0) as Qty, IsNull(A.[Price], 0) as Price, IsNull(A.[Amount], 0) as Amount From ESJSLTRAN2 A INNER JOIN Master1 B On A.[ItemCode] = B.[Code] And B.[MasterType] = 6 Where A.[VchCode] = {VchCode} And VchType = 108 Order By B.[Name]";
                 DataTable DT1 = obj.getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
                     foreach (DataRow item in DT1.Rows)
                     {
-                        ilist.Add(new GetQuotationVchItemsDT
+                        ilist.Add(new GetVchItemsDT
                         {
                             VchCode = Convert.ToInt32(item["VchCode"]),
                             SNo = clsMain.MyInt(sno++),
@@ -753,7 +755,7 @@ namespace JSLLite.Controllers
                     {
                         foreach (DataRow item in DT2.Rows)
                         {
-                            sql = $"Insert Into ESJSLREFTRAN ([VchCode], [VchType], [RecType], [Method], [RefNo], [Date], [MasterCode1], [ItemCode], [Qty], [Price], [Amount]) Values ({clsMain.MyInt(item["VchCode"])}, 108, 1, 1, '{clsMain.MyString(item["RefNo"])}', '{item["Date"]}', {clsMain.MyInt(item["AccCode"])}, {clsMain.MyInt(item["ItemCode"])}, {Convert.ToDecimal(item["Qty"])}, {Convert.ToDecimal(item["Price"])}, {Convert.ToDecimal(item["Amount"])})";
+                            sql = $"Insert Into ESJSLREFTRAN ([VchCode], [VchType], [RecType], [Method], [RefNo], [Date], [MasterCode1], [ItemCode], [Qty], [Price], [Amount], [OrderId]) Values ({clsMain.MyInt(item["VchCode"])}, 108, 1, 1, '{clsMain.MyString(item["RefNo"])}', '{item["Date"]}', {clsMain.MyInt(item["AccCode"])}, {clsMain.MyInt(item["ItemCode"])}, {Convert.ToDecimal(item["Qty"])}, {Convert.ToDecimal(item["Price"])}, {Convert.ToDecimal(item["Amount"])}, {clsMain.MyInt(item["VchCode"])})";
                             int DT3 = conobj.ExecuteSQL(sql);
 
                             if (DT3 == 0) { throw new Exception("Unable To Connect To Company"); }
@@ -929,14 +931,10 @@ namespace JSLLite.Controllers
                 string constr = GetConnectionString(Provider, CompCode, Fy);
                 SQLHELPER conobj = new SQLHELPER(constr);
                 var series = GetSeriesConfigDetails(constr);
-                var srdata = series.serieslist;
-                int STBusyCode = 0;
-                string seriesname = series.serieslist.SeriesName;
-                string tmcname = series.serieslist.TMCName;
+                var srdata = series.serieslist; int STBusyCode = 0;
+                string seriesname = series.serieslist.SeriesName; string tmcname = series.serieslist.TMCName;
                 string vchNo = GetQuatationVchNo(constr, Convert.ToInt32(109), Convert.ToInt32(2), out int autoNo);
-                string formattedDate = DateTime.Now.ToString("dd-MM-yyyy"); // Format the date as 'YYYY-MM-DD hh:mm:ss'
-
-                //string tmcname = seriesObject["TMCName"].ToObject<string>();
+                //string formattedDate = DateTime.Now.ToString("dd-MM-yyyy"); // Format the date as 'YYYY-MM-DD hh:mm:ss'
                 double InvAmount = 0; string xmlstr = ""; STVchDetail NewInv = obj;
 
                 // Generate Stock Tranfer XML
@@ -976,7 +974,6 @@ namespace JSLLite.Controllers
                     new SqlParameter("@OrderId", SqlDbType.Int) { Value = obj.OrderId },
                     new SqlParameter("@OrderNo", SqlDbType.VarChar, 40) { Value = obj.OrderNo },
                     new SqlParameter("@VchNo", SqlDbType.VarChar, 40) { Value = vchNo },
-                    new SqlParameter("@Date", SqlDbType.DateTime) { Value = formattedDate },
                     new SqlParameter("@AutoVchNo", SqlDbType.Int) { Value = autoNo },
                     new SqlParameter("@AccCode", SqlDbType.Int) { Value = obj.AccCode },
                     new SqlParameter("@AccName", SqlDbType.VarChar, 100) { Value = obj.AccName },
@@ -999,9 +996,94 @@ namespace JSLLite.Controllers
             {
                 return new { Status = 0, Msg = ex.Message.ToString(), };
             }
-            return new { Status = 1, Msg = "Success", Data = VchCode };
+            return new { Status = 1, Msg = "Success", VchCode = VchCode };
         }
 
+        [HttpGet]
+        public dynamic GetStockTranferVchDetails(string CompCode, string FY, string MCCode, string StartDate, string EndDate)
+        {
+            List<GetSTVchDT> slist = new List<GetSTVchDT>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER conobj = new SQLHELPER(constr);
+                string formattedStartDate = string.IsNullOrEmpty(StartDate) ? "" : Busyhelper.FormatDate(StartDate);
+                string formattedEndDate = string.IsNullOrEmpty(EndDate) ? "" : Busyhelper.FormatDate(EndDate);
+
+                string sql = $"Select [VchCode], ISNULL([VCHNO], '') as VchNo, CONVERT(VARCHAR, [DATE], 105) as VchDate, ISNULL([CUSTID], 0) as AccCode, ISNULL([CUSTNAME], '') as AccName, ISNULL([CMobile], '') as Mobile, ISNULL([TotQty], 0) as TotQTy, ISNULL([TotAmt], 0) as TotAmt, ISNULL([NetAmount], 0) as NetAmt, ISNULL([BUSYVCHCODE], 0) as BUsyVchCode, ISNULL([Remarks], '') as Remarks From ESJSLTRAN1 Where VchType = 109 And [I1] = {MCCode}";
+                if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And [Date] >= '{formattedStartDate}' And [Date] <= '{formattedEndDate}'";
+                DataTable DT1 = conobj.getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach(DataRow item in DT1.Rows)
+                    {
+                        slist.Add(new GetSTVchDT
+                        {
+                            VchCode = Convert.ToInt32(item["VchCode"]),
+                            VchNo = item["VchNo"].ToString().Trim(),
+                            Date = item["VchDate"].ToString().Trim(),
+                            AccCode = Convert.ToInt32(item["AccCode"]),
+                            AccName = clsMain.MyString(item["AccName"]).Trim(),
+                            Mobile = clsMain.MyString(item["Mobile"]).Trim(),
+                            TQty = Convert.ToDecimal(item["TotQty"]),
+                            TAmt = Convert.ToDecimal(item["TotAmt"]),
+                            NetAmt = Convert.ToDecimal(item["NetAmt"]),
+                            Remarks = clsMain.MyString(item["Remarks"]),
+                            BusyVchCode = Convert.ToInt32(item["BusyVchCode"]),
+                        });
+                    }
+                }
+                else
+                {
+                    return new { Status = 0, Msg = "Data Not Found !!!", Data = slist };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = -1, Msg = ex.Message.ToString(), Data = slist };
+            }
+            return new { Status = 1, Msg = "Success", Data = slist };
+        }
+
+        public dynamic GetStockTransferItemsDetails(string CompCode, string FY, int VchCode)
+        {
+            List<GetVchItemsDT> sitem = new List<GetVchItemsDT>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER obj = new SQLHELPER(constr); var sno = 1;
+
+                string sql = $"Select A.[VchCode], IsNull(A.[ItemCode], 0) as ItemCode, IsNull(B.[Name], '') as ItemName, IsNull(A.[Qty], 0) as Qty, IsNull(A.[Price], 0) as Price, IsNull(A.[Amount], 0) as Amount From ESJSLTRAN2 A INNER JOIN Master1 B On A.[ItemCode] = B.[Code] And B.[MasterType] = 6 Where A.[VchCode] = {VchCode} And A.[VchType] = 109 Order By B.[Name]";
+                DataTable DT1 = obj.getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach (DataRow item in DT1.Rows)
+                    {
+                        sitem.Add(new GetVchItemsDT
+                        {
+                            VchCode = Convert.ToInt32(item["VchCode"]),
+                            SNo = clsMain.MyInt(sno++),
+                            ItemCode = Convert.ToInt32(item["ItemCode"]),
+                            ItemName = clsMain.MyString(item["ItemName"]).Trim(),
+                            Qty = Convert.ToDecimal(item["Qty"]),
+                            Price = Convert.ToDecimal(item["Price"]),
+                            Amount = Convert.ToDecimal(item["Amount"]),
+                        });
+                    }
+                }
+                else
+                {
+                    return new { Status = 0, Msg = "Data Not Found !!!", Data = sitem };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = -1, Msg = ex.Message.ToString(), Data = sitem, };
+            }
+            return new { Status = 1, Msg = "Success", Data = sitem };
+        }
         private bool SaveVoucherFromXML(int VchType, string xmlStr, ref object VchCode, CFixedInterface fi, out string errMsg)
         {
             object err = "";

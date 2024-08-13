@@ -14,6 +14,7 @@ namespace JSL_LITE.Models
         {
             public Accounts Accounts { get; set; }
         }
+
         public class Account
         {
             public string Name { get; set; }

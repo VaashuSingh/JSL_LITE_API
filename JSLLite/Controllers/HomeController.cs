@@ -8,9 +8,8 @@ using System.Net.Http.Headers;
 using System.Web;
 using System.Web.Mvc;
 using System.Globalization;
-using BeatAPI.Models;
 
-namespace BeatAPI.Controllers
+namespace JSL_LITE.Controllers
 {
     public class HomeController : Controller
     {
