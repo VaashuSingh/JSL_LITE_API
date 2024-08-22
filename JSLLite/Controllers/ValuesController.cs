@@ -1,35 +1,24 @@
 ﻿
+using Busy2184;
 using ESCommon;
+using JSL_LITE.Models;
+using JSLLite.Models;
+using Newtonsoft.Json.Linq;
 using System;
-using RestSharp;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Web.Http;
 using System.Data.SqlClient;
-using System.Globalization;
-using JSLLite.Models;
-using System.Xml.Serialization;
 using System.IO;
-using System.Web;
+using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
-using System.Xml;
-using System.Web.Http.Cors;
-using System.Reflection;
-using static JSL_LITE.Models.BusyVoucher;
-using System.Runtime.Serialization.Json;
-using System.Web.Razor.Parser.SyntaxTree;
-using JSL_LITE.Models;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
+using System.Web;
 using System.Web.Hosting;
-using Busy2184;
+using System.Web.Http;
+using System.Xml;
+using System.Xml.Serialization;
 
 //http://103.25.128.155/SFAApi/CatalogImages/
 //http://103.207.64.9:99/SFA/CatalogImages/
@@ -79,16 +68,6 @@ namespace JSL_LITE.Controllers
         }
 
 
-        string ConnectionString = ConfigurationManager.ConnectionStrings["ConString1"].ToString();
-        string ConStringDB = ConfigurationManager.ConnectionStrings["ConStringDB"].ToString();
-        string WebApi = clsMain.MyString(System.Configuration.ConfigurationManager.AppSettings["WebApi"]);
-        string FinYr = ConfigurationManager.AppSettings["FinYr"].ToString();
-        string IMGFolder = ConfigurationManager.AppSettings["ImgFolder"].ToString();
-        string IFolder = ConfigurationManager.AppSettings["IFolder"].ToString();
-        string LogoFolder = ConfigurationManager.AppSettings["LogoFolder"].ToString();
-        string BannerFolder = ConfigurationManager.AppSettings["BannerFolder"].ToString();
-        string ImgFolderPath = ConfigurationManager.AppSettings["ImgFolderPath"].ToString();
-
         int Provider = clsMain.MyInt(ConfigurationManager.AppSettings["Provider"]);
         string BusyPath = ConfigurationManager.AppSettings["BusyPath"];
         string BusyDataPath = ConfigurationManager.AppSettings["BusyDataPath"];
@@ -103,34 +82,155 @@ namespace JSL_LITE.Controllers
             return true;
         }
 
-        public dynamic GetApplogoURL()
+        [HttpGet]
+        [Route("api/image/{type}/{name}")]
+        public List<string> GetImagesName(string type, string name)
         {
-
-            string LogoFile = "";
-            try
+            if (string.IsNullOrEmpty(name))
             {
-                var baseUrl = Request.RequestUri.GetLeftPart(UriPartial.Authority);
+                return new List<string>(); // Return an empty list if the name is null or empty
+            }
 
-                string FldPath = System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath;
-                string FilePath = FldPath + LogoFolder;
-                DirectoryInfo d = new DirectoryInfo(FilePath);
-                FileInfo[] Files = d.GetFiles("*.*");
-                foreach (FileInfo file in Files)
+            string rootPath = HostingEnvironment.MapPath($"~/images/{type}");
+            if (rootPath == null || !Directory.Exists(rootPath))
+            {
+                return new List<string>(); // Return an empty list if the directory doesn't exist
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+
+            var images = Directory.GetFiles(rootPath)
+                                  .Where(file => allowedExtensions.Contains(Path.GetExtension(file).ToLower()) &&
+                                                 Path.GetFileNameWithoutExtension(file)
+                                                     .IndexOf(name, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                                  .Select(Path.GetFileName)
+                                  .ToList();
+
+            return images; // Return the list of image file names
+        }
+
+        [HttpGet]
+        [Route("api/image/{type}/{name}")]
+        public List<string> GetMultipleImagesPath(string type, string baseName)
+        {
+            if (string.IsNullOrEmpty(baseName))
+            {
+                return new List<string>(); // Return an empty list if the base name is null or empty
+            }
+
+            // Get the root path for the images
+            string rootPath = HostingEnvironment.MapPath($"~/images/{type}");
+            if (rootPath == null || !Directory.Exists(rootPath))
+            {
+                return new List<string>(); // Return an empty list if the directory doesn't exist
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var imagePaths = new List<string>();
+
+            // Escape special characters in the base name and build regex pattern
+            var escapedBaseName = Regex.Escape(baseName.Trim());
+            var regexPattern = new Regex(@"^" + escapedBaseName + @"(-\d+)?\.(jpg|jpeg|png|gif)$", RegexOptions.IgnoreCase);
+
+            Console.WriteLine("Regex Pattern: " + regexPattern); // Debug output
+
+            // Get all files in the directory
+            var allFiles = Directory.GetFiles(rootPath);
+
+            // Base URL: local or server
+            string baseUrl = HttpContext.Current.Request.Url.GetLeftPart(UriPartial.Authority);
+
+            // Iterate over each file and check if it matches the base name with optional suffixes
+            foreach (var file in allFiles)
+            {
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file);
+                var fileExtension = Path.GetExtension(file).ToLower();
+
+                Console.WriteLine("Checking File: " + file); // Debug output
+                Console.WriteLine("File Name Without Extension: " + fileNameWithoutExtension); // Debug output
+
+                // Check if the file has an allowed extension
+                if (allowedExtensions.Contains(fileExtension))
                 {
-                    if ((file.Attributes & FileAttributes.Directory) != FileAttributes.Directory)
+                    // Check if the file name matches the base pattern
+                    if (regexPattern.IsMatch(fileNameWithoutExtension + fileExtension))
                     {
-                        LogoFile = baseUrl + IFolder + LogoFolder + clsMain.MyString(file.Name);
-                        break;
+                        // Construct the URL for the image
+                        string relativePath = $"~/images/{type}/{Path.GetFileName(file)}";
+                        string fullPath = baseUrl + VirtualPathUtility.ToAbsolute(relativePath).Replace("~", "");
+
+                        Console.WriteLine("Matched Image Path: " + fullPath); // Debug output
+                        imagePaths.Add(fullPath); // Add the URL to the list of image paths
                     }
                 }
             }
-            catch
-            {
-                return new { Status = 0, Msg = "Failed", URL = "" };
-            }
-            return new { Status = 1, Msg = "Success", URL = LogoFile };
+
+            // Sort the image paths
+            imagePaths = imagePaths
+                .OrderBy(path =>
+                {
+                    var fileName = Path.GetFileNameWithoutExtension(path);
+                    var match = Regex.Match(fileName, @"^" + escapedBaseName + @"(-(\d+))?$");
+                    var suffix = match.Groups[2].Value;
+                    // Return 0 for the base image, and the numeric suffix for others
+                    return string.IsNullOrEmpty(suffix) ? 0 : int.Parse(suffix);
+                })
+                .ToList();
+
+            return imagePaths; // Return the list of image paths
         }
 
+        [HttpGet]
+        [Route("api/image/{type}/{name}")]
+        public string GetSingleImagePath(string type, string baseName)
+        {
+            if (string.IsNullOrEmpty(baseName))
+            {
+                return null; // Return null if the base name is null or empty
+            }
+
+            // Get the root path for the images
+            string rootPath = HostingEnvironment.MapPath($"~/images/{type}");
+            if (string.IsNullOrEmpty(rootPath) || !Directory.Exists(rootPath))
+            {
+                return null; // Return null if the directory doesn't exist
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+
+            // Escape special characters in the base name and build regex pattern
+            var escapedBaseName = Regex.Escape(baseName.Trim());
+            var regexPattern = new Regex(@"^" + escapedBaseName + @"\.(jpg|jpeg|png|gif)$", RegexOptions.IgnoreCase);
+
+            // Get all files in the directory
+            var allFiles = Directory.GetFiles(rootPath);
+
+            // Base URL: local or server
+            string baseUrl = HttpContext.Current.Request.Url.GetLeftPart(UriPartial.Authority);
+
+            // Iterate over each file and check if it exactly matches the base name
+            foreach (var file in allFiles)
+            {
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file);
+                var fileExtension = Path.GetExtension(file).ToLower();
+
+                // Check if the file has an allowed extension
+                if (allowedExtensions.Contains(fileExtension))
+                {
+                    // Check if the file name exactly matches the base pattern
+                    if (regexPattern.IsMatch(fileNameWithoutExtension + fileExtension))
+                    {
+                        // Construct the URL for the image
+                        string relativePath = $"~/images/{type}/{Path.GetFileName(file)}";
+                        string fullPath = baseUrl + VirtualPathUtility.ToAbsolute(relativePath).Replace("~", "");
+
+                        return fullPath; // Return the URL of the matching image
+                    }
+                }
+            }
+
+            return null; // Return null if no matching image is found
+        }
 
         [HttpGet]
         public dynamic GetMobuleAppLogoURL(string CompCode)
@@ -241,11 +341,11 @@ namespace JSL_LITE.Controllers
         [HttpGet]
         public dynamic GetCategory(string CompCode, string FY)
         {
-            List<ParentCategory> SPT = new List<ParentCategory>();
+            List<Category> SPT = new List<Category>();
             try
             {
                 string constr = GetConnectionString(Provider, CompCode, FY);
-                string sql = ""; string img = "https://random.imagecdn.app/500/500";
+                string sql = ""; //string img = "https://random.imagecdn.app/500/500";
 
                 sql = $"Select Distinct T.I1 as [Code], M1.[Name] From ESAttributesMappingConfig T left Join Master1 M1 On T.I1 = M1.Code Order by M1.Name";
                 DataTable DT1 = Provider == 1 ? new OLEDBHELPER(constr).getTable(sql) : new SQLHELPER(constr).getTable(sql);
@@ -253,10 +353,12 @@ namespace JSL_LITE.Controllers
                 {
                     foreach (DataRow item in DT1.Rows)
                     {
-                        ParentCategory TM = new ParentCategory();
+                        string images = GetSingleImagePath(Convert.ToString("Categorys"), clsMain.MyString(item["Name"]));
+
+                        Category TM = new Category();
                         TM.Code = clsMain.MyInt(item["Code"]);
                         TM.Name = clsMain.MyString(item["Name"]);
-                        TM.Images = img;
+                        TM.Images = images;
                         SPT.Add(TM);
                     }
                 }
@@ -274,7 +376,7 @@ namespace JSL_LITE.Controllers
             List<GetProduct> PList = new List<GetProduct>();
             try
             {
-                string constr = GetConnectionString(Provider, CompCode, FY); string img = "https://random.imagecdn.app/500/500";
+                string constr = GetConnectionString(Provider, CompCode, FY); //string img = "https://random.imagecdn.app/500/500";
                 SQLHELPER obj = new SQLHELPER(constr);
                 string SubGrpStr = GrpCode > 0 ? SubGrpStr = GetAllItemSubGroups(GrpCode, constr) : "";
 
@@ -291,6 +393,7 @@ namespace JSL_LITE.Controllers
                         string rootName = clsMain.MyString(grp["Name"]);
                         object price = GetProductMinAndMaxPrice(constr, rootCode);
                         JObject priceObject = JObject.FromObject(price);
+                        var images = GetMultipleImagesPath(Convert.ToString("Products"), clsMain.MyString(grp["Name"]));
 
                         // Find or create the root data object
                         GetProduct rootData = PList.FirstOrDefault(rd => rd.Code == rootCode);
@@ -302,7 +405,7 @@ namespace JSL_LITE.Controllers
                                 Name = rootName,
                                 MinPrice = priceObject["MinPrice"].ToObject<decimal>(),
                                 MaxPrice = priceObject["MaxPrice"].ToObject<decimal>(),
-                                Images = img,
+                                Images = images,
                                 DataItem = new List<DataItem>()
                             };
                             PList.Add(rootData);
@@ -403,18 +506,18 @@ namespace JSL_LITE.Controllers
             List<GetProductsFiltWise> PList = new List<GetProductsFiltWise>();
             try
             {
-                string constr = GetConnectionString(Provider, CompCode, FY); string img = "https://random.imagecdn.app/500/500";
+                string constr = GetConnectionString(Provider, CompCode, FY); //string img = "https://random.imagecdn.app/500/500";
                 SQLHELPER obj = new SQLHELPER(constr);
                 string IgrpStr = GetAllParentGroups(IGrpCode, constr);
                 object price = GetProductMinAndMaxPrice(constr, IGrpCode);
                 JObject priceObject = JObject.FromObject(price);
-                string igrpname = GetBusyMasterCode2NameIfExist(constr, IGrpCode, 5);
+                string igrpname = GetBusyMasterCode2NameIfExist(constr, IGrpCode, 5); 
+                var images = GetMultipleImagesPath(Convert.ToString("Products"), clsMain.MyString(igrpname));
                 var sizeChartData = GetProductSubAttribute(constr, IGrpCode);
                 var sizeCharts = sizeChartData?.Data as List<SizeChart> ?? new List<SizeChart>();
 
-                //string sql = $"Select A.[SrNo],A.[I2] as ATCode,M1.[Name] as Attribute,A.[I3] as SATCode,M2.[Name] as AttributeVal,A.I4 as AMendatory From (Select B.SrNo,B.I2,E.I3,B.I4 From (Select Top 1 I1 as MIgrpCode," + GrpCode + " as IgrpCode from ESAttributesMappingConfig Where I1 in (" + IgrpStr + ") Group By I1) A Inner Join ESAttributesMappingConfig B On A.MIgrpCode = B.I1 Inner Join Master1 M1 On A.IgrpCode = M1.ParentGrp Inner Join ESAttributesMappingConfig E On M1.Code = E.I1 And E.MasterType = 101 And B.[I2] = E.[I2] Where B.[I4] = 1 Group By A.MIgrpCode,B.SrNo,B.I2,E.I3,B.I4 Union All Select B.SrNo,B.I2,M1.Code as I3,B.I4 From (Select Top 1 I1 as MIgrpCode," + GrpCode + " as IgrpCode from ESAttributesMappingConfig Where I1 in (" + IgrpStr + ") Group By I1) A Inner Join ESAttributesMappingConfig B On A.MIgrpCode = B.I1 Inner Join ESMaster1 M1 On B.I2 = M1.I1 Where B.I4 = 0 Group By B.SrNo,B.I2,M1.Code,B.I4) A Inner Join ESMaster1 M1 On A.I2 = M1.Code Inner Join ESMaster1 M2 On A.I3 = M2.Code Order By A.SrNo";
-
-                string sql = $"Select A.[SrNo],A.[I2] as ATCode,M1.[Name] as Attribute,A.[I3] as SATCode,M2.[Name] as AttributeVal,A.I4 as AMendatory From (Select B.SrNo,B.I2,E.I3,B.I4 From (Select Top 1 I1 as IgrpCode from ESAttributesMappingConfig Where I1 = {IGrpCode} Group By I1) A Inner Join ESAttributesMappingConfig B On A.IgrpCode = B.I1 Inner Join Master1 M1 On A.IgrpCode = M1.ParentGrp Inner Join ESAttributesMappingConfig E On M1.Code = E.I1 And E.MasterType = 101 And B.[I2] = E.[I2] Where B.[I4] = 1 Group By A.IgrpCode,B.SrNo,B.I2,E.I3,B.I4 Union All Select B.SrNo,B.I2,M1.Code as I3,B.I4 From (Select Top 1 I1 as IgrpCode from ESAttributesMappingConfig Where I1 = {IGrpCode} Group By I1) A Inner Join ESAttributesMappingConfig B On A.IgrpCode = B.I1 Inner Join ESMaster1 M1 On B.I2 = M1.I1 Where B.I4 = 0 Group By B.SrNo,B.I2,M1.Code,B.I4) A Inner Join ESMaster1 M1 On A.I2 = M1.Code Inner Join ESMaster1 M2 On A.I3 = M2.Code Order By A.SrNo";
+                string sql = $"Select A.[SrNo],A.[I2] as ATCode,M1.[Name] as Attribute,A.[I3] as SATCode,M2.[Name] as AttributeVal,A.I4 as AMendatory From (Select B.SrNo,B.I2,E.I3,B.I4 From (Select Top 1 I1 as MIgrpCode," + IGrpCode + " as IgrpCode from ESAttributesMappingConfig Where I1 in (" + IgrpStr + ") Group By I1) A Inner Join ESAttributesMappingConfig B On A.MIgrpCode = B.I1 Inner Join Master1 M1 On A.IgrpCode = M1.ParentGrp Inner Join ESAttributesMappingConfig E On M1.Code = E.I1 And E.MasterType = 101 And B.[I2] = E.[I2] Where B.[I4] = 1 Group By A.MIgrpCode,B.SrNo,B.I2,E.I3,B.I4 Union All Select B.SrNo,B.I2,M1.Code as I3,B.I4 From (Select Top 1 I1 as MIgrpCode," + IGrpCode + " as IgrpCode from ESAttributesMappingConfig Where I1 in (" + IgrpStr + ") Group By I1) A Inner Join ESAttributesMappingConfig B On A.MIgrpCode = B.I1 Inner Join ESMaster1 M1 On B.I2 = M1.I1 Where B.I4 = 0 Group By B.SrNo,B.I2,M1.Code,B.I4) A Inner Join ESMaster1 M1 On A.I2 = M1.Code Inner Join ESMaster1 M2 On A.I3 = M2.Code Order By A.SrNo";
+                //string sql = $"Select A.[SrNo],A.[I2] as ATCode,M1.[Name] as Attribute,A.[I3] as SATCode,M2.[Name] as AttributeVal,A.I4 as AMendatory From (Select B.SrNo,B.I2,E.I3,B.I4 From (Select Top 1 I1 as IgrpCode from ESAttributesMappingConfig Where I1 = {IGrpCode} Group By I1) A Inner Join ESAttributesMappingConfig B On A.IgrpCode = B.I1 Inner Join Master1 M1 On A.IgrpCode = M1.ParentGrp Inner Join ESAttributesMappingConfig E On M1.Code = E.I1 And E.MasterType = 101 And B.[I2] = E.[I2] Where B.[I4] = 1 Group By A.IgrpCode,B.SrNo,B.I2,E.I3,B.I4 Union All Select B.SrNo,B.I2,M1.Code as I3,B.I4 From (Select Top 1 I1 as IgrpCode from ESAttributesMappingConfig Where I1 = {IGrpCode} Group By I1) A Inner Join ESAttributesMappingConfig B On A.IgrpCode = B.I1 Inner Join ESMaster1 M1 On B.I2 = M1.I1 Where B.I4 = 0 Group By B.SrNo,B.I2,M1.Code,B.I4) A Inner Join ESMaster1 M1 On A.I2 = M1.Code Inner Join ESMaster1 M2 On A.I3 = M2.Code Order By A.SrNo";
                 DataTable DT2 = obj.getTable(sql);
                 if (DT2 != null && DT2.Rows.Count > 0)
                 {
@@ -426,6 +529,7 @@ namespace JSL_LITE.Controllers
                         int subDataCode = Convert.ToInt32(row["SATCode"]);
                         string subDataName = row["AttributeVal"].ToString();
                         int AMendatory = clsMain.MyInt(row["AMendatory"]);
+                        
 
                         // Find or create the root data object
                         GetProductsFiltWise rootData = PList.FirstOrDefault(rd => rd.Code == rootCode);
@@ -437,7 +541,7 @@ namespace JSL_LITE.Controllers
                                 Name = igrpname,
                                 MinPrice = priceObject["MinPrice"].ToObject<decimal>(),
                                 MaxPrice = priceObject["MaxPrice"].ToObject<decimal>(),
-                                Images = img,
+                                Images = images,
                                 SizeCharts = sizeCharts,
                                 DataItem = new List<DataItem>()
                             };
@@ -477,7 +581,7 @@ namespace JSL_LITE.Controllers
                         Name = igrpname,
                         MinPrice = priceObject["MinPrice"].ToObject<decimal>(),
                         MaxPrice = priceObject["MaxPrice"].ToObject<decimal>(),
-                        Images = img,
+                        Images = images,
                         SizeCharts = sizeCharts,
                         DataItem = new List<DataItem>()
                     });
@@ -491,6 +595,7 @@ namespace JSL_LITE.Controllers
             return new { Status = 1, Msg = "Success", Data = PList };
         }
 
+        [HttpGet]
         public dynamic GetProductSubAttribute(string constr, int IGrpCode)
         {
             var lsize = new List<SizeChart>();
@@ -529,9 +634,12 @@ namespace JSL_LITE.Controllers
                 JObject filterObject = JObject.FromObject(filters);
                 var CompCode = filterObject["CompCode"]?.ToObject<string>();
                 var FY = filterObject["FY"]?.ToObject<string>();
-                string img = "https://random.imagecdn.app/500/500";
+                var AccCode = filterObject["AccCode"]?.ToObject<int>();
+                string formattedDate = DateTime.Now.ToString("dd-MMM-yyyy");
+                //string img = "https://random.imagecdn.app/500/500";
                 string constr = GetConnectionString(Provider, CompCode, FY);
-                SQLHELPER obj = new SQLHELPER(constr);
+                SQLHELPER obj = new SQLHELPER(constr); int R = 0;
+                string OptFld = GetConfigeOptionalField(constr, 1);
 
                 // Get GrpCode from filters
                 var grpCode = filterObject["GrpCode"]?.ToObject<int>();
@@ -560,31 +668,35 @@ namespace JSL_LITE.Controllers
                 }
 
                 if (hCodes.Count == 0 || atCodes.Count == 0) { throw new Exception("HCode and ATCode are required in Items."); }
+                string optFldCase = string.IsNullOrEmpty(OptFld) ? "''" : $"CASE WHEN LEN({OptFld}) > 0 THEN M1.{OptFld} ELSE '' END";
 
                 // Build the SQL query
-                string sql = $"Select Top 1 A.MasterCode as ItemCode, M.[Name] as ItemName, M.[CM1] as UCode,M2.[Name] as UName,M.[D2] as Price, Sum(A.Qty) as Stock From (Select A.MasterCode, A.D1 as Qty From Folio1 A Where A.MasterType = 6 Union All Select MasterCode1, IsNull(Sum(Value1),0) as Qty From Tran2 A inner Join Master1 B On A.MasterCode1 = B.Code And A.MasterCode2 = B.CM6 Where A.Date <= '31-Jul-2024' And A.RecType = 2 Group By MasterCode1) A inner Join Master1 M On A.MasterCode = M.Code Left Join Master1 M2 on M.[CM1] = M2.Code";
-
-                int R = 0;
+                string sql = $"Select Top 1 A.MasterCode as ItemCode, M.[Name] as ItemName, M.[CM1] as UCode,M2.[Name] as UName, M.[D2] as Price, {optFldCase} as Brand, Sum(A.Qty) as Stock From (Select A.MasterCode, A.D1 as Qty From Folio1 A Where A.MasterType = 6 Union All Select MasterCode1, IsNull(Sum(Value1),0) as Qty From Tran2 A inner Join Master1 B On A.MasterCode1 = B.Code And A.MasterCode2 = B.CM6 Where A.Date <= '{formattedDate}' And A.RecType = 2 Group By MasterCode1) A inner Join Master1 M On A.MasterCode = M.Code Left Join MasterAddressInfo M1 On A.MasterCode = M1.MasterCode Left Join Master1 M2 on M.[CM1] = M2.Code";
                 for (int i = 0; i < atCodes.Count; i++) { R++; sql += $" Inner Join ESAttributesMappingConfig E{R} On M.Code = E{R}.I1 AND E{R}.MasterType = 101"; }
                 sql += $" Where M.[ParentGrp] = {grpCode}"; R = 0;
-                for (int i = 0; i < atCodes.Count; i++) { R++; sql += $" And E{R}.I3 = {atCodes[i]}"; }
-                //sql += $"AND E.I2 IN ({string.Join(",", hCodes)}) AND E.I3 IN ({string.Join(",", atCodes)}) " +
-                sql += $" Group By A.[MasterCode],M.[Name], M.[CM1],M2.[Name],M.[D2] Order By M.[Name]";
+                for (int i = 0; i < atCodes.Count; i++) { R++; sql += $" And E{R}.I3 = {atCodes[i]}"; }                                     //sql += $"AND E.I2 IN ({string.Join(",", hCodes)}) AND E.I3 IN ({string.Join(",", atCodes)}) " +
+                sql += string.IsNullOrEmpty(OptFld) ? $" Group By A.[MasterCode], M.[Name], M.[CM1],M2.[Name], M.[D2] Order By M.[Name]" : $" Group By A.[MasterCode], M.[Name], M.[CM1],M2.[Name], M.[D2], {OptFld} Order By M.[Name]";
+
                 DataTable DT1 = obj.getTable(sql);
+
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
                     foreach (DataRow row in DT1.Rows)
                     {
+                        var priceDisc = new ItemDiscount(); priceDisc = GetItemCategoryWisePriceAndDiscount(constr, Convert.ToInt32(AccCode), Convert.ToInt32(row["ItemCode"]));
+                        var images = GetMultipleImagesPath(Convert.ToString("Items"), clsMain.MyString(row["ItemName"]));
+
                         productList.Add(new GetItemsDTStock
                         {
                             ItemName = row["ItemName"].ToString(),
                             ItemCode = Convert.ToInt32(row["ItemCode"]),
                             UName = row["UName"].ToString(),
                             UCode = Convert.ToInt32(row["UCode"]),
-                            Price = Convert.ToDecimal(row["Price"]),
                             Stock = Convert.ToDecimal(row["Stock"]),
                             Qty = Convert.ToDecimal(1),
-                            Images = img.ToString(),
+                            Images = images,
+                            Brand = Convert.ToString(row["Brand"]),
+                            ItemDiscounts = priceDisc
                         });
                     }
                 }
@@ -598,6 +710,29 @@ namespace JSL_LITE.Controllers
                 return new { Status = 0, Msg = err.Message.ToString(), Data = productList };
             }
             return new { Status = 1, Msg = "Success", Data = productList };
+        }
+
+        private ItemDiscount GetItemCategoryWisePriceAndDiscount(string Constr, int AccCode, int ItemCode)
+        {
+            var distPrice = new ItemDiscount();
+            try
+            {
+                string sql = $"SELECT ISNULL(M1.[MasterCode], 0) as ItemCode, ISNULL(M2.[Name], '') as ItemName, ISNULL(M1.[D1], 0) as Price, ISNULL(M1.[D3], 0) As MRP, ISNULL(M1.[D2], 0) as Discount FROM ESJSLCustomer A LEFT JOIN MasterSupport M1 ON M1.MasterCode = {ItemCode} and M1.I1 = CASE WHEN ISNULL(A.CustType, 0) = 1 THEN 101 WHEN ISNULL(A.CustType, 0) = 2 THEN 102 WHEN ISNULL(A.CustType, 0) = 3 THEN 103 ELSE 101 END Inner Join Master1 M2 On M1.MasterCode = M2.Code And M2.MasterType = 6 WHERE M1.MasterCode = {ItemCode} ";
+                if (AccCode > 0) sql += $" And A.[Code] = {AccCode}";
+                sql += $"Group By M1.[MasterCode], M2.[Name], M1.[D1], M1.[D3], M1.[D2]";
+                DataTable DT1 = new SQLHELPER(Constr).getTable(sql);
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    distPrice.Price = Convert.ToDecimal(DT1.Rows[0]["Price"]);
+                    distPrice.MRP = Convert.ToDecimal(DT1.Rows[0]["MRP"]);
+                    distPrice.Discount = Convert.ToDouble(DT1.Rows[0]["Discount"]);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching Item Category Wise Price And Discount: " + ex.Message);
+            }
+            return distPrice;
         }
 
         [HttpPost]
@@ -659,7 +794,7 @@ namespace JSL_LITE.Controllers
                 string formattedEndDate = string.IsNullOrEmpty(EndDate) ? "" : Busyhelper.FormatDate(EndDate);
                 int QStatus = Status == 1 ? 0 : Status == 2 ? 1 : Status == 3 ? 2 : 0;
 
-                string sql = $"Select [VchCode],IsNull([VchNo], '') as VchNo, Convert(Varchar, [Date], 105) as Date, IsNull([CustId], 0) as CustId, IsNull([CustName], '') as CustName, IsNull([CMobile], '') as CMobile,IsNull([TotQty], 0) as TotQty,IsNull([TotAmt], 0) as TotAmt,IsNull([NetAmount], 0) as NetAmt,IsNull([QStatus], 0) as QStatus From ESJSLTRAN1 Where [CreatedBy] = '{Users}' And VchType = 108";
+                string sql = $"Select [VchCode],IsNull([VchNo], '') as VchNo, Convert(Varchar, [Date], 105) as Date, IsNull([CustId], 0) as CustId, IsNull([CustName], '') as CustName, IsNull([CMobile], '') as CMobile,IsNull([TotQty], 0) as TotQty,IsNull([TotAmt], 0) as TotAmt,IsNull([NetAmount], 0) as NetAmt,IsNull([QStatus], 0) as QStatus,(CASE WHEN [QStatus] = 1 Then 'Approved' WHEN [QStatus] = 2 Then 'Rejected' ELSE 'Pending' END) as QName From ESJSLTRAN1 Where [CreatedBy] = '{Users}' And VchType = 108";
                 if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And Date >= '{formattedStartDate}' And Date <= '{formattedEndDate}'";
                 if (Status != 0) sql += $" And [QStatus] = {QStatus}";
                 DataTable DT1 = obj.getTable(sql);
@@ -680,7 +815,7 @@ namespace JSL_LITE.Controllers
                             TAmt = Convert.ToDecimal(item["TotAmt"]),
                             NetAmt = Convert.ToDecimal(item["NetAmt"]),
                             QStatus = Convert.ToInt32(item["QStatus"]),
-                            QName = Convert.ToInt32(item["QStatus"]) == 0 ? "Pending" : Convert.ToInt32(item["QStatus"]) == 1 ? "Approved" : Convert.ToInt32(item["QStatus"]) == 2 ? "Rejected" : "Pending",
+                            QName = clsMain.MyString(item["QName"])
                         });
                     }
                 }
@@ -721,6 +856,7 @@ namespace JSL_LITE.Controllers
                             Qty = Convert.ToDecimal(item["Qty"]),
                             Price = Convert.ToDecimal(item["Price"]),
                             Amount = Convert.ToDecimal(item["Amount"]),
+                            Images = GetSingleImagePath(Convert.ToString("Items"), clsMain.MyString(item["ItemName"]).Trim()),
                         });
                     }
                 }
@@ -734,6 +870,130 @@ namespace JSL_LITE.Controllers
                 return new { Status = -1, Msg = err.Message.ToString(), Data = ilist };
             }
             return new { Status = 1, Msg = "Success", Data = ilist };
+        }
+
+        [HttpPost]
+        public dynamic SaveOrderFollowUp(FollowUp obj, string CompCode, string FY)
+        {
+            int Status = 0; string StatusStr = string.Empty;
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER conobj = new SQLHELPER(constr);
+
+                SqlParameter[] parameters = new SqlParameter[]
+                {
+                    new SqlParameter("@VchCode", SqlDbType.Int) {Value = obj.VchCode},
+                    new SqlParameter("@VchType", SqlDbType.Int) {Value = obj.VchType},
+                    new SqlParameter("@Remarks", SqlDbType.VarChar, 255) { Value= obj.Remarks},
+                    new SqlParameter("@FollowdBy", SqlDbType.VarChar, 40) { Value = obj.FollowdBy }
+                };
+
+                DataTable DT1 = conobj.getTable("dbo.[sp_SaveOrderFollowUp]", parameters);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    Status = Convert.ToInt32(DT1.Rows[0]["Status"]);
+                    StatusStr = clsMain.MyString(DT1.Rows[0]["Msg"]);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString(), };
+            }
+            return new { Status = Status, Msg = StatusStr };
+        }
+
+        [HttpGet]
+        public dynamic GetOrderFollowUp(string CompCode, string FY, int VchCode, int VchType)
+        {
+            List<GetFollowUp> flist = new List<GetFollowUp>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER conobj = new SQLHELPER(constr);
+
+                string sql = $"Select ISNULL(B.[SNo], 0) as SNo,CONVERT(VARCHAR, B.[FollowdOn],105) as FDate, ISNULL(B.[Remarks], '') as Remarks From ESJSLTRAN1 A Inner Join ESJSLFOLLOWUP B ON A.VCHCODE = B.VCHCODE AND A.VCHTYPE = B.VCHTYPE WHERE A.[VCHCODE] = {VchCode} AND A.[VCHTYPE] = {VchType} ORDER BY B.[SNO]";
+                DataTable DT1 = conobj.getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach (DataRow item in DT1.Rows)
+                    {
+                        flist.Add(new GetFollowUp
+                        {
+                            SNo = Convert.ToInt32(item["SNo"]),
+                            FDate = clsMain.MyString(item["FDate"]),
+                            Remarks = clsMain.MyString(item["Remarks"])
+                        });
+                    }
+                }
+                else
+                {
+                    return new { Status = 0, Msg = "Data Not Found !!!", Data = flist };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString(), Data = flist };
+            }
+            return new { Status = 1, Msg = "Success", Data = flist };
+        }
+
+        [HttpGet]
+        public dynamic GetOrderPrintingDetails(string CompCode, string FY, int VchCode, int VchType)
+        {
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER conobj = new SQLHELPER(constr); int sno = 1;
+
+                string sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, Convert(Varchar, A.[Date], 105) as VchDate, IsNull(A.[CustId], 0) as AccCode, IsNull(A.[CustName], '') as AccName, IsNull(A.[CMobile], '') as Mobile,IsNull(A.[TotQty], 0) as TotQty,IsNull(A.[TotAmt], 0) as TotAmt,IsNull(A.[NetAmount], 0) as NetAmt,IsNull(A.[QStatus], 0) as QStatus, (CASE WHEN [QStatus] = 1 Then 'Approved' WHEN [QStatus] = 2 Then 'Rejected' ELSE 'Pending' END) as QName, IsNull(B.[ItemCode], 0) as ItemCode, IsNull(C.[Name], '') as ItemName, IsNull(B.[Qty], 0) as Qty, IsNull(B.[Price], 0) as Price, IsNull(B.[Amount], 0) as Amount From ESJSLTRAN1 A Inner Join ESJSLTRAN2 B On A.VchCode = B.VchCode And A.VchType = B.VchType Left Join Master1 C On B.ItemCode = C.Code And C.MasterType = 6 Where A.VchType = {VchType} And A.VchCode = {VchCode}";
+                DataTable DT1 = conobj.getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    var head = new GetOrderPrinting
+                    {
+                        VchCode = Convert.ToInt32(DT1.Rows[0]["VchCode"]),
+                        VchNo = DT1.Rows[0]["VchNo"].ToString().Trim(),
+                        Date = DT1.Rows[0]["VchDate"].ToString().Trim(),
+                        AccCode = Convert.ToInt32(DT1.Rows[0]["AccCode"]),
+                        AccName = clsMain.MyString(DT1.Rows[0]["AccName"]).Trim(),
+                        Mobile = clsMain.MyString(DT1.Rows[0]["Mobile"]).Trim(),
+                        TQty = Convert.ToDecimal(DT1.Rows[0]["TotQty"]),
+                        TAmt = Convert.ToDecimal(DT1.Rows[0]["TotAmt"]),
+                        NetAmt = Convert.ToDecimal(DT1.Rows[0]["NetAmt"]),
+                        QStatus = Convert.ToInt32(DT1.Rows[0]["QStatus"]),
+                        QName = clsMain.MyString(DT1.Rows[0]["QName"]),
+                        ItemsDetails = new List<PrintItemsDT>()
+                    };
+
+                    foreach (DataRow item in DT1.Rows)
+                    {
+                        head.ItemsDetails.Add(new PrintItemsDT
+                        {
+                            SNo = clsMain.MyInt(sno++),
+                            ItemCode = Convert.ToInt32(item["ItemCode"]),
+                            ItemName = clsMain.MyString(item["ItemName"]).Trim(),
+                            Qty = Convert.ToDecimal(item["Qty"]),
+                            Price = Convert.ToDecimal(item["Price"]),
+                            Amount = Convert.ToDecimal(item["Amount"]),
+                            Images = GetSingleImagePath(Convert.ToString("Items"), clsMain.MyString(item["ItemName"]).Trim()),
+                        });
+                    }
+                    return new { Status = 1, Msg = "Success", Data = head };
+                }
+                else
+                {
+                    return new { Status = 1, Msg = "Data Not Found !!!" };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString() };
+            }
+
         }
 
         [HttpPost]
@@ -798,7 +1058,7 @@ namespace JSL_LITE.Controllers
 
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
-                    foreach(DataRow item in DT1.Rows)
+                    foreach (DataRow item in DT1.Rows)
                     {
                         qlist.Add(new GetStockTransferQuotDt
                         {
@@ -837,7 +1097,7 @@ namespace JSL_LITE.Controllers
                 SQLHELPER conobj = new SQLHELPER(constr);
 
                 string sql = $"Select A.ItemCode, A.ItemName, A.UCode, UName, A.Q as Qty,A.Price,STK.Stock From (Select ISNULL(A.[ItemCode], 0) as ItemCode, ISNULL(B.[Name], '') as ItemName, ISNULL(B.[CM1], 0) as UCode, ISNULL(C.[Name], '') as UName, ISNULL(SUM(A.[Qty]), 0) as Q, Max(Price) as Price from ESJSLRefTran A Inner join Master1 B On A.ItemCode = B.Code Inner Join ESJSLTran1 T1 On A.OrderID = T1.VchCode Left Join Master1 C On B.CM1 = C.Code Where B.MasterType = 6 And B.CM6 = {MCCode} And A.RecType = 1 And T1.VchCode = {VchCode} And T1.QStatus = 1 Group by A.ItemCode, B.[Name], B.[CM1], C.[Name] Having Sum(A.Qty) >= 0.01) A Outer Apply(Select ISNULL(Sum(S.Qty),0) as Stock From(Select S.D1 as Qty From Tran4 S Where S.MasterCode1 = A.ItemCode And S.MasterCode2 = {MCCode} Union All Select IsNull(Sum(S.Value1), 0) as Qty From Tran2 S Where S.MasterCode1 = A.ItemCode And S.MasterCode2 = {MCCode} And S.RecType = 2 And S.[Date] <= GetDate()) S) STK";
-                 DataTable DT1 = conobj.getTable(sql);
+                DataTable DT1 = conobj.getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
@@ -925,8 +1185,43 @@ namespace JSL_LITE.Controllers
         //    return new { Status = 1, Msg = "Success", Data = list };
         //}
 
+        [HttpGet]
+        public dynamic GetPackerList(string CompCode, string Fy)
+        {
+            List<UnknowList> plist = new List<UnknowList>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, Fy);
+                SQLHELPER conobj = new SQLHELPER(constr); int sno = 1;
+
+                string sql = $"Select IsNull([User], 0) as Name From ESUserMapping Where UType = 5 Group By [User] Order By [User]";
+                DataTable DT1 = conobj.getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach (DataRow item in DT1.Rows)
+                    {
+                        plist.Add(new UnknowList
+                        {
+                            Code = Convert.ToInt32(sno++),
+                            Name = clsMain.MyString(item["Name"])
+                        });
+                    }
+                }
+                else
+                {
+                    throw new Exception("Data Not Found !!!");
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString(), Data = plist };
+            }
+            return new { Status = 1, Msg = "Success", Data = plist };
+        }
+
         [HttpPost]
-        public dynamic SaveStockTransferData(STVchDetail obj, string CompCode , string Fy)
+        public dynamic SaveStockTransferData(STVchDetail obj, string CompCode, string Fy)
         {
             object VchCode = 0;
             int STBusyCode = 0;
@@ -934,14 +1229,14 @@ namespace JSL_LITE.Controllers
             string StatusStr = string.Empty;
             string errMsg = string.Empty;
             CFixedInterface FI = new CFixedInterface();
+            SeriesConfigDt seriesDt = new SeriesConfigDt();
             try
             {
                 BusyVoucher BusyVch = new BusyVoucher();
                 string constr = GetConnectionString(Provider, CompCode, Fy);
                 SQLHELPER conobj = new SQLHELPER(constr);
-                var series = GetSeriesConfigDetails(constr);
-                var srdata = series.serieslist;
-                string seriesname = series.serieslist.SeriesName; string tmcname = series.serieslist.TMCName;
+                seriesDt = GetSeriesConfigDetails(constr);
+                string seriesname = seriesDt?.SeriesName; string tmcname = seriesDt?.TMCName;
                 string vchNo = GetQuatationVchNo(constr, Convert.ToInt32(109), Convert.ToInt32(2), out int autoNo);
                 //string formattedDate = DateTime.Now.ToString("dd-MM-yyyy"); // Format the date as 'YYYY-MM-DD hh:mm:ss'
                 double InvAmount = 0; string xmlstr = ""; STVchDetail NewInv = obj;
@@ -979,7 +1274,7 @@ namespace JSL_LITE.Controllers
                     new SqlParameter("@AccCode", SqlDbType.Int) { Value = obj.AccCode },
                     new SqlParameter("@AccName", SqlDbType.VarChar, 100) { Value = obj.AccName },
                     new SqlParameter("@MCCode1", SqlDbType.Int) { Value = obj.MCCode },
-                    new SqlParameter("@MCCode2", SqlDbType.Int) { Value = series?.serieslist?.TMCCode },
+                    new SqlParameter("@MCCode2", SqlDbType.Int) { Value = seriesDt?.TMCCode },
                     new SqlParameter("@Mobile", SqlDbType.VarChar, 50) { Value = obj.Mobile },
                     new SqlParameter("@Remarks", SqlDbType.VarChar, -1) { Value = obj.Remarks},
                     new SqlParameter("@TQty", SqlDbType.Float) { Value = obj.TQty },
@@ -1011,7 +1306,7 @@ namespace JSL_LITE.Controllers
             catch (Exception ex)
             {
                 if (STBusyCode > 0) { DeleteVoucher(FI, STBusyCode, out errMsg); };
-                return new { Status = 0, Msg = ex.Message.ToString(), };
+                return new { Status = 0, Msg = ex.Message.ToString() };
             }
             return new { Status = Status, Msg = StatusStr, VchCode = STBusyCode };
         }
@@ -1033,7 +1328,7 @@ namespace JSL_LITE.Controllers
 
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
-                    foreach(DataRow item in DT1.Rows)
+                    foreach (DataRow item in DT1.Rows)
                     {
                         slist.Add(new GetSTVchDT
                         {
@@ -1115,10 +1410,10 @@ namespace JSL_LITE.Controllers
                 string sql = $"Select IsNull(A.MasterCode1, 0) As AccCode, IsNull(C.[Name], '') as AccName from ESJSLRefTran A inner Join ESJSLCustomer C On A.MasterCode1 = C.Code Inner Join ESJSLTran1 T1 On A.OrderID = T1.VchCode Where A.RecType = 1 And T1.VchType = 109 And T1.QStatus = 0 Group by A.MasterCode1, C.[Name] Having Sum(A.Qty) >= 0.01";
                 DataTable DT1 = conobj.getTable(sql);
 
-                if(DT1 != null && DT1.Rows.Count > 0)
+                if (DT1 != null && DT1.Rows.Count > 0)
                 {
-                    foreach( DataRow item in DT1.Rows) 
-                    { 
+                    foreach (DataRow item in DT1.Rows)
+                    {
                         clist.Add(new UnknowList
                         {
                             Code = Convert.ToInt32(item["AccCode"]),
@@ -1284,7 +1579,7 @@ namespace JSL_LITE.Controllers
                 ORD.VchNo = vchNo.ToString();
                 ORD.VchType = VchType;
                 ORD.StockUpdationDate = ORD.Date;
-                ORD.MasterName1 = Inv.MCName; 
+                ORD.MasterName1 = Inv.MCName;
                 ORD.MasterName2 = TMCName.ToString();
                 ORD.TranCurName = "";
                 ORD.TmpVchCode = 0;
@@ -1333,6 +1628,237 @@ namespace JSL_LITE.Controllers
             return XMLStr;
         }
 
+        [HttpPost]
+        public dynamic CreateParty(CCustomer obj, string CompCode, string FY)
+        {
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER objcon = new SQLHELPER(constr);
+
+                string sql = $"Insert Into ESJSLCustomer ([Name], [Email], [Mobile], [GSTIN], [Address], [OrgName], [CustType]) Values ('{obj.Name.Replace("'", "''")}', '{obj.Email.Replace("'", "''")}', '{obj.Mobile.Replace("'", "''")}', '{obj.GSTNO.Replace("'", "''")}', '{obj.Address.Replace("'", "''")}', '{obj.OrgName}', {obj.CustType})";
+                int r = objcon.ExecuteSQL(sql);
+                if (r > 0)
+                {
+                    return new { Status = 1, Msg = "Party Create Sucessfully !!!" };
+                }
+                else
+                {
+                    return new { Status = 0, Msg = "Unable To Connect To Company !!!" };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString().Trim() };
+            }
+        }
+
+        [HttpGet]
+        public dynamic GetCustomerDetails(string Mobile, string CompCode, string FY)
+        {
+            List<GetCustomerDT> pmlist = new List<GetCustomerDT>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                string sql = $"Select IsNull([Code], 0) as Code, IsNull([Name], '') as Name, IsNull([Mobile], '') as Mobile  From ESJSLCUSTOMER WHERE [MOBILE] = '{Mobile.Replace("'", "''").ToString().Trim()}'";
+
+                DataTable DT1 = new SQLHELPER(constr).getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach (DataRow item in DT1.Rows)
+                    {
+                        pmlist.Add(new GetCustomerDT
+                        {
+                            Code = Convert.ToInt32(item["Code"]),
+                            Name = item["Name"].ToString().Trim(),
+                            Mobile = item["Mobile"].ToString().Trim(),
+                        });
+                    }
+                }
+                else
+                {
+                    return new { Status = 0, Msg = "Customer Not Found !!!", Data = pmlist };
+                }
+            }
+            catch (Exception EX)
+            {
+                return new { Status = -1, Msg = EX.Message.ToString(), Data = pmlist };
+            }
+            return new { Status = 1, Msg = "Success", Data = pmlist };
+        }
+
+        [HttpGet]
+        public dynamic GetSalesmanWiseCustomerList(string CompCode, string FY, string Users, int VchType, string startDate, string endDate)
+        {
+            List<CustomerList> clist = new List<CustomerList>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER conobj = new SQLHELPER(constr);
+                string formattedStartDate = string.IsNullOrEmpty(startDate) ? "" : Busyhelper.FormatDate(startDate);
+                string formattedEndDate = string.IsNullOrEmpty(endDate) ? "" : Busyhelper.FormatDate(endDate);
+
+                string sql = $"Select A.AccCode, A.AccName, ISNULL(B.[Mobile], '') as Mobile, IsNull(B.[Email], '') as Email, IsNull(B.[OrgName], '') as FirmName, IsNull(B.[Address], '') as [Address], IsNull(B.[CustType], 0) as CTCode, (CASE WHEN [CustType] = 1 THEN 'B2B A' WHEN [CustType] = 2 THEN 'B2B B' WHEN  [CustType] = 3 THEN 'B2C' ELSE '' END) as CTName From (";
+                sql += $"Select IsNull(A.[Custid], 0) as AccCode, ISNULL(A.[CustName], '') as AccName From ESJSLTRAN1 A Inner Join ESUserMapping B On A.CreatedBy = B.[User] Where B.UType in (1,2) And B.[User] = '{Users.Replace("'", "''").Trim()}' And VchType = {VchType} ";
+                if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And A.[Date] >= '{formattedStartDate}' And A.[Date] <= '{formattedEndDate}'";
+                sql += " Group By A.[Custid], A.[CustName]) A Inner Join ESJSLCustomer B On A.AccCode = B.Code Order By A.[AccName]";
+                DataTable DT1 = conobj.getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach (DataRow item in DT1.Rows)
+                    {
+                        clist.Add(new CustomerList
+                        {
+                            AccCode = Convert.ToInt32(item["AccCode"]),
+                            AccName = clsMain.MyString(item["AccName"]),
+                            Mobile = clsMain.MyString(item["Mobile"]),
+                            Email = clsMain.MyString(item["Email"]),
+                            FirmName = clsMain.MyString(item["FirmName"]),
+                            Address = clsMain.MyString(item["Address"]),
+                            CTCode = Convert.ToInt32(item["CTCode"]),
+                            CTName = clsMain.MyString(item["CTName"]),
+                        });
+                    }
+                }
+                else
+                {
+                    return new { Status = 0, Msg = "Data Not Found !!!", Data = clist };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString() };
+            }
+            return new { Status = 1, Msg = "Success", Data = clist };
+        }
+
+        [HttpGet]
+        public dynamic GetSalesManWiseOrderGraffDetails(string CompCode, string FY, string Users, int AccCode, int VchType, string StartDate, string EndDate)
+        {
+            List<SalesManOrdersDt> slist = new List<SalesManOrdersDt>();
+            List<GraffYear> dlist = new List<GraffYear>();
+
+            try
+            {
+                string formattedStartDate = string.IsNullOrEmpty(StartDate) ? "" : Busyhelper.FormatDate(StartDate);
+                string formattedEndDate = string.IsNullOrEmpty(EndDate) ? "" : Busyhelper.FormatDate(EndDate);
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER conobj = new SQLHELPER(constr);
+
+                // Fetch Salesman Order Amount using the new function
+                dlist = GetSalesmanOrderAmount(constr, Users, AccCode, VchType, formattedStartDate, formattedEndDate);
+
+                string sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, Convert(Varchar, A.[Date], 105) as Date, IsNull(A.[CustId], 0) as AccCode, IsNull(A.[CustName], '') as AccName, IsNull(A.[CMobile], '') as Mobile,IsNull(A.[TotQty], 0) as TotQty,IsNull(A.[TotAmt], 0) as TotAmt,IsNull(A.[NetAmount], 0) as NetAmt,IsNull(A.[QStatus], 0) as QStatus,(CASE WHEN A.[QStatus] = 1 Then 'Approved' WHEN A.[QStatus] = 2 Then 'Rejected' ELSE 'Pending' END) as QName, IsNull(A.[Remarks], '') as Remarks From ESJSLTRAN1 A Inner Join ESUserMapping B On A.CreatedBy = B.[User] Where B.UType in (1,2) And B.[User] = '{Users.Replace("'", "''").Trim()}' And A.[CustId] = {AccCode} And A.[VchType] = {VchType}";
+                if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And Date >= '{formattedStartDate}' And Date <= '{formattedEndDate}'";
+                DataTable DT1 = conobj.getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach (DataRow item in DT1.Rows)
+                    {
+                        slist.Add(new SalesManOrdersDt
+                        {
+                            VchCode = Convert.ToInt32(item["VchCode"]),
+                            VchNo = item["VchNo"].ToString().Trim(),
+                            Date = item["Date"].ToString().Trim(),
+                            AccCode = Convert.ToInt32(item["AccCode"]),
+                            AccName = clsMain.MyString(item["AccName"]).Trim(),
+                            Mobile = clsMain.MyString(item["Mobile"]).Trim(),
+                            TQty = Convert.ToDecimal(item["TotQty"]),
+                            TAmt = Convert.ToDecimal(item["TotAmt"]),
+                            NetAmt = Convert.ToDecimal(item["NetAmt"]),
+                            SCode = Convert.ToInt32(item["QStatus"]),
+                            SName = clsMain.MyString(item["QName"]),
+                            Remarks = clsMain.MyString(item["Remarks"])
+                        });
+                    }
+                }
+                else
+                {
+                    return new { Status = 0, Msg = "Data Not Found !!!", Data = new { DiscountDetails = dlist, ItemDetails = slist } };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString(), Data = new { DiscountDetails = dlist, ItemDetails = slist } };
+            }
+            return new { Status = 1, Msg = "Success", Data = new { DiscountDetails = dlist, ItemDetails = slist } };
+        }
+
+        public dynamic GetSalesmanOrderAmount(string constr, string Users, int AccCode, int VchType, string StartDate, string EndDate)
+        {
+            List<GraffYear> Grafyear = new List<GraffYear>();
+            try
+            {
+                SQLHELPER conobj = new SQLHELPER(constr);
+                string sql = $"Select YEAR(A.[DATE]) as [YEAR], MONTH(A.[DATE]) as [MONTH], CONVERT(CHAR(3), DATENAME(MONTH, A.[DATE])) As MName, IsNull(SUM(A.[NetAmount]), 0) as QutAmt, 100001 as InvAmt From ESJSLTRAN1 A Inner Join ESUserMapping B On A.CreatedBy = B.[User] Where B.UType in (1,2) And B.[User] = '{Users}' And A.[CustId] = {AccCode} And A.[VchType] = {VchType}";
+                if (!string.IsNullOrEmpty(StartDate) && !string.IsNullOrEmpty(EndDate)) sql += $" And A.[Date] >= '{StartDate}' And A.[Date] <= '{EndDate}'"; sql += $"Group By YEAR(A.[DATE]), MONTH(A.[DATE]),  CONVERT(CHAR(3), DATENAME(MONTH, A.[DATE]))";
+                DataTable DT1 = conobj.getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach (DataRow item in DT1.Rows)
+                    {
+                        int rootCode = Convert.ToInt32(item["YEAR"]);
+                        int dataItemCode = Convert.ToInt32(item["MONTH"]);
+
+                        // Find or create the root data object
+                        GraffYear rootData = Grafyear.FirstOrDefault(rd => rd.Year == rootCode);
+                        if (rootData == null)
+                        {
+                            rootData = new GraffYear
+                            {
+                                Year = rootCode,
+                                Months = new List<Months>()
+                            };
+                            Grafyear.Add(rootData);
+                        }
+
+                        Months dataItem = rootData.Months.FirstOrDefault(di => di.MonthsCode == dataItemCode);
+                        if (dataItem == null)
+                        {
+                            dataItem = new Months
+                            {
+                                MonthsCode = dataItemCode,
+                                MonthsName = clsMain.MyString(item["MName"]),
+                                QuotaionAmt = Convert.ToDecimal(item["QutAmt"]),
+                                InvoiceAmt = Convert.ToDecimal(item["InvAmt"]),
+                            };
+                            rootData.Months.Add(dataItem);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching salesman order amount: " + ex.Message);
+            }
+            return Grafyear;
+        }
+
+        public GetPrice GetProductMinAndMaxPrice(string constr, int ParentGrp)
+        {
+            GetPrice price = new GetPrice();
+            try
+            {
+                SQLHELPER objcon = new SQLHELPER(constr);
+                string sql = $"Select IsNull(Min(A.[D2]), 0) as MinPrice, IsNull(Max(A.[D2]), 0) as MaxPrice From (Select Code, isNull([D2], 0) as D2 From Master1 Where ParentGrp = {ParentGrp} And MasterType  = 6 And [D2] > 0) A";
+                DataTable DT1 = objcon.getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    price.MinPrice = Convert.ToDecimal(DT1.Rows[0]["MinPrice"]);
+                    price.MaxPrice = Convert.ToDecimal(DT1.Rows[0]["MaxPrice"]);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching Price : " + ex.Message);
+            }
+            return price;
+        }
 
         [HttpGet]
         public string GetAllParentGroups(int ParentGrp, string ConStr)
@@ -1423,118 +1949,6 @@ namespace JSL_LITE.Controllers
             catch
             {
 
-            }
-        }
-
-        [HttpPost]
-        public dynamic CreateParty(CCustomer obj, string CompCode, string FY)
-        {
-            try
-            {
-                string constr = GetConnectionString(Provider, CompCode, FY);
-                SQLHELPER objcon = new SQLHELPER(constr);
-
-                string sql = $"Insert Into ESJSLCustomer ([Name], [Email], [Mobile], [GSTIN], [Address], [OrgName], [CustType]) Values ('{obj.Name.Replace("'", "''")}', '{obj.Email.Replace("'", "''")}', '{obj.Mobile.Replace("'", "''")}', '{obj.GSTNO.Replace("'", "''")}', '{obj.Address.Replace("'", "''")}', '{obj.OrgName}', {obj.CustType})";
-                int r = objcon.ExecuteSQL(sql);
-                if (r > 0)
-                {
-                    return new { Status = 1, Msg = "Party Create Sucessfully !!!" };
-                }
-                else
-                {
-                    return new { Status = 0, Msg = "Unable To Connect To Company !!!" };
-                }
-            }
-            catch (Exception ex)
-            {
-                return new { Status = 0, Msg = ex.Message.ToString().Trim() };
-            }
-        }
-
-        [HttpGet]
-        public dynamic GetCustomerDetails(string Mobile, string CompCode, string FY)
-        {
-            List<GetCustomerDT> pmlist = new List<GetCustomerDT>();
-            try
-            {
-                string constr = GetConnectionString(Provider, CompCode, FY);
-                string sql = $"Select IsNull([Code], 0) as Code, IsNull([Name], '') as Name, IsNull([Mobile], '') as Mobile  From ESJSLCUSTOMER WHERE [MOBILE] = '{Mobile.Replace("'", "''").ToString().Trim()}'";
-
-                DataTable DT1 = new SQLHELPER(constr).getTable(sql);
-
-                if (DT1 != null && DT1.Rows.Count > 0)
-                {
-                    foreach (DataRow item in DT1.Rows)
-                    {
-                        pmlist.Add(new GetCustomerDT
-                        {
-                            Code = Convert.ToInt32(item["Code"]),
-                            Name = item["Name"].ToString().Trim(),
-                            Mobile = item["Mobile"].ToString().Trim(),
-                        });
-                    }
-                }
-                else
-                {
-                    return new { Status = 0, Msg = "Customer Not Found !!!", Data = pmlist };
-                }
-            }
-            catch (Exception EX)
-            {
-                return new { Status = -1, Msg = EX.Message.ToString(), Data = pmlist };
-            }
-            return new { Status = 1, Msg = "Success", Data = pmlist };
-        }
-
-        public dynamic GetProductMinAndMaxPrice(string constr, int ParentGrp)
-        {
-            GetPrice price = new GetPrice();
-            try
-            {
-                SQLHELPER objcon = new SQLHELPER(constr);
-                string sql = $"Select IsNull(Min(A.[D2]), 0) as MinPrice, IsNull(Max(A.[D2]), 0) as MaxPrice From (Select Code, isNull([D2], 0) as D2 From Master1 Where ParentGrp = {ParentGrp} And MasterType  = 6 And [D2] > 0) A";
-                DataTable DT1 = objcon.getTable(sql);
-
-                if (DT1 != null && DT1.Rows.Count > 0)
-                {
-                    price.MinPrice = Convert.ToDecimal(DT1.Rows[0]["MinPrice"]);
-                    price.MaxPrice = Convert.ToDecimal(DT1.Rows[0]["MaxPrice"]);
-                }
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
-            return price;
-        }
-        public async Task<string> GetRandomImageAsync()
-        {
-            string apiUrl = "https://api.api-ninjas.com/v1/randomimage?category=nature";
-            string apiKey = "ZCx9TJHWGStBFb4x1EnLqQ==5rgdTkAEtHwOYJ8z"; // Ensure the API key is correct
-
-            try
-            {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
-                    HttpResponseMessage response = await client.GetAsync(apiUrl);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        string imageUrl = await response.Content.ReadAsStringAsync();
-                        return imageUrl;
-                    }
-                    else
-                    {
-                        string errorMessage = await response.Content.ReadAsStringAsync();
-                        throw new Exception($"Failed to retrieve random image. Status code: {response.StatusCode}, Message: {errorMessage}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the exception or handle it as needed
-                throw new Exception($"An error occurred while fetching the random image: {ex.Message}");
             }
         }
 
@@ -17918,23 +18332,14 @@ namespace JSL_LITE.Controllers
         {
             try
             {
-                SQLHELPER obj = new SQLHELPER(constr);
-
                 string sql = $"Select [CM6] As MCCode From Master1 Where Code = {ItemCode} And MasterType = 6 ";
-                DataTable DT1 = obj.getTable(sql);
+                DataTable DT1 = new SQLHELPER(constr).getTable(sql);
 
-                if (DT1 != null)
-                {
-                    return clsMain.MyInt(DT1.Rows[0]["MCCode"]);
-                }
-                else
-                {
-                    return 0;
-                }
+                return DT1 != null ? clsMain.MyInt(DT1.Rows[0]["MCCode"]) : 0 ;
             }
-            catch (Exception Err)
+            catch (Exception ex)
             {
-                return 0;
+                throw new Exception("Error fetching Item Default Material Center:" + ex.Message.ToString());
             }
         }
 
@@ -18019,9 +18424,9 @@ namespace JSL_LITE.Controllers
             }
         }
 
-        public dynamic GetSeriesConfigDetails(string constr)
+        private SeriesConfigDt GetSeriesConfigDetails(string constr)
         {
-            SeriesConfigDt serieslist = new SeriesConfigDt();
+            SeriesConfigDt seriesDt = new SeriesConfigDt();
             try
             {
                 SQLHELPER obj = new SQLHELPER(constr);
@@ -18030,17 +18435,40 @@ namespace JSL_LITE.Controllers
 
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
-                    serieslist.SeriesCode = Convert.ToInt32(DT1.Rows[0]["SeriesCode"]);
-                    serieslist.SeriesName = clsMain.MyString(DT1.Rows[0]["SeriesName"]).Trim();
-                    serieslist.TMCCode = Convert.ToInt32(DT1.Rows[0]["TMCCode"]);
-                    serieslist.TMCName = clsMain.MyString(DT1.Rows[0]["TMCName"]).Trim();
+                    seriesDt.SeriesCode = Convert.ToInt32(DT1.Rows[0]["SeriesCode"]);
+                    seriesDt.SeriesName = clsMain.MyString(DT1.Rows[0]["SeriesName"]).Trim();
+                    seriesDt.TMCCode = Convert.ToInt32(DT1.Rows[0]["TMCCode"]);
+                    seriesDt.TMCName = clsMain.MyString(DT1.Rows[0]["TMCName"]).Trim();
+                }
+                else
+                {
+                    throw new Exception("Voucher Can't Save, Due to Series And Material Center Not Configure");
                 }
             }
             catch (Exception ex)
             {
-                return new { serieslist };
+                throw new Exception("Error fetching Configuration Series Details" + ex.Message.ToString());
             }
-            return new { serieslist };
+            return seriesDt;
+        }
+
+        private string GetConfigeOptionalField(string constr, int RecType)
+        {
+            try
+            {
+                string sql = $"Select IsNull(Code, 0) as OptFld From ESJSLOFConfig Where RecType = {RecType}";
+                DataTable DT1 = new SQLHELPER(constr).getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    return "OF" + Convert.ToInt32(DT1.Rows[0]["OptFld"]);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching Configuration Item Optional Filed:" + ex.Message.ToString());
+            }
+            return "";
         }
     }
 }

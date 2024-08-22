@@ -13,6 +13,19 @@ namespace JSLLite.Models
         public int Code { get; set; }
         public string Name { get; set; }
     }
+
+    public class CustomerList
+    {
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
+        public string FirmName { get; set; }
+        public string Address { get; set; }
+        public int CTCode { get; set; }
+        public string CTName { get; set; }
+
+    }
     public class User
     {
         public string UserName { get; set; }
@@ -29,14 +42,36 @@ namespace JSLLite.Models
         public int Values { get; set; }
     }
 
+    public class Category
+    {
+        public string Name { get; set; }
+        public int Code { get; set; }
+        public string Images { get; set; }
+
+    }
+
     public class GetProduct
     {
         public int Code { get; set; }
         public string Name { get; set; }
         public decimal MinPrice { get; set; }
         public decimal MaxPrice { get; set; }
-        public string Images { get; set; }
+        public List<string> Images { get; set; }
         public List<DataItem> DataItem { get; set; }
+    }
+
+    public class ItemDiscount
+    {
+        public decimal Price { get; set; }
+        public decimal MRP { get; set; }
+        public double Discount { get; set; } 
+    }
+
+    public class ItemDiscountWithOutCustomer
+    {
+        public int ItemCode { get; set; }
+        public string ItemName { get; set; }
+        public ItemDiscount ItemDiscount { get; set; }
     }
 
     public class GetProductsFiltWise
@@ -45,7 +80,7 @@ namespace JSLLite.Models
         public string Name { get; set; }
         public decimal MinPrice { get; set; }
         public decimal MaxPrice { get; set; }
-        public string Images { get; set; }
+        public List<string> Images { get; set; }
         public List<SizeChart> SizeCharts { get; set; }
         public List<DataItem> DataItem { get; set; }
     }
@@ -83,12 +118,13 @@ namespace JSLLite.Models
     {
         public int ItemCode { get; set; }
         public string ItemName { get; set; }
+        public string Brand { get; set; }
         public int UCode { get; set; }
         public string UName { get; set; }
         public decimal Qty { get; set; }
         public decimal Stock { get; set; }
-        public decimal Price { get; set; }
-        public string Images { get; set; }
+        public List<string> Images { get; set; }
+        public ItemDiscount ItemDiscounts { get; set; }
     }
 
     public class GetItemsStock
@@ -187,6 +223,49 @@ namespace JSLLite.Models
         public decimal Qty { get; set; }
         public decimal Price { get; set; }
         public decimal Amount { get; set; }
+        public string Images { get; set; }
+    }
+
+    public class FollowUp
+    {
+        public int VchCode { get; set; }
+        public int VchType { get; set; }
+        public string Remarks { get; set; }
+        public string FollowdBy { get; set; }
+    }
+
+    public class GetFollowUp
+    {
+        public int SNo { get; set; }
+        public string FDate { get; set; }
+        public string Remarks { get; set; }
+    }
+
+    public class GetOrderPrinting
+    {
+        public int VchCode { get; set; }
+        public string Date { get; set; }
+        public string VchNo { get; set; }
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Mobile { get; set; }
+        public decimal TQty { get; set; }
+        public decimal TAmt { get; set; }
+        public decimal NetAmt { get; set; }
+        public int QStatus { get; set; }
+        public string QName { get; set; }
+        public List<PrintItemsDT> ItemsDetails { get; set; }
+    }
+
+    public class PrintItemsDT
+    {
+        public int SNo { get; set; }
+        public int ItemCode { get; set; }
+        public string ItemName { get; set; }
+        public decimal Qty { get; set; }
+        public decimal Price { get; set; }
+        public decimal Amount { get; set; }
+        public string Images { get; set; }
     }
 
     public class ApprovedQuotation
@@ -195,6 +274,41 @@ namespace JSLLite.Models
         public int APCode { get; set; }
         public string Remarks { get; set; }
         public string ApprovedBy { get; set; }
+    }
+
+    public class SalesManOrdersDt
+    {
+        public int VchCode { get; set; }
+        public string Date { get; set; }
+        public string VchNo { get; set; }
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Mobile { get; set; }
+        public decimal TQty { get; set; }
+        public decimal TAmt { get; set; }
+        public decimal NetAmt { get; set; }
+        public int SCode { get; set; }
+        public string SName { get; set; }
+        public string Remarks { get; set; }
+    }
+
+    public class SalesmanOrderAmount
+    {
+        public decimal QuotaionAmt { get; set; }
+        public decimal InvoiceAmt { get; set; }
+    }
+
+    public class GraffYear
+    {
+        public int Year { get; set; }
+        public List<Months> Months { get; set; }
+    }
+    public class Months
+    {
+        public int MonthsCode { get; set; }
+        public string MonthsName { get; set; }
+        public decimal QuotaionAmt { get; set; }
+        public decimal InvoiceAmt { get; set; }
     }
 
     public class CCustomer
@@ -208,12 +322,14 @@ namespace JSLLite.Models
         public string PAN { get; set; }
         public int CustType { get; set; }
     }
+
     public class GetCustomerDT
     {
         public int Code { get; set; }
         public string Name { get; set; }
         public string Mobile { get; set; }
     }
+
     public class GetPrice
     {
         public decimal MinPrice { get; set; }
@@ -311,17 +427,11 @@ namespace JSLLite.Models
     {
         public string URL { get; set; }    
     }
+
     public class UserRegister
     {
         public string Message { get; set; }
         public int Status { get; set; }
-    }
-    public class ParentCategory
-    {
-        public string Name { get; set; }
-        public int Code { get; set; }
-        public string Images { get; set; }
-       
     }
     public class PartySaleType
     {
