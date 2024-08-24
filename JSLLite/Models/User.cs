@@ -56,8 +56,11 @@ namespace JSLLite.Models
         public string Name { get; set; }
         public decimal MinPrice { get; set; }
         public decimal MaxPrice { get; set; }
-        public List<string> Images { get; set; }
-        public List<DataItem> DataItem { get; set; }
+        public string Images { get; set; } = "";
+
+        //public List<DataItem> DataItem { get; set; }
+        public List<Mendatory> Mendatories { get; set; }
+        public List<NonMendatory> NonMendatories { get; set; }
     }
 
     public class ItemDiscount
@@ -67,11 +70,22 @@ namespace JSLLite.Models
         public double Discount { get; set; } 
     }
 
-    public class ItemDiscountWithOutCustomer
+    public class ItemWithDiscount
     {
         public int ItemCode { get; set; }
         public string ItemName { get; set; }
         public ItemDiscount ItemDiscount { get; set; }
+    }
+
+    public class ListOfItem
+    {
+        public List<ListOfItemDT> ItemDetails { get; set; }
+    }
+
+    public class ListOfItemDT
+    {
+        public int ItemCode { get; set; }
+        public string ItemName { get; set; }
     }
 
     public class GetProductsFiltWise
@@ -82,14 +96,34 @@ namespace JSLLite.Models
         public decimal MaxPrice { get; set; }
         public List<string> Images { get; set; }
         public List<SizeChart> SizeCharts { get; set; }
-        public List<DataItem> DataItem { get; set; }
+
+        //public List<DataItem> DataItem { get; set; }
+        public List<Mendatory> Mendatories { get; set; }
+        public List<NonMendatory> NonMendatories { get; set; }
     }
+
 
     public class DataItem
     {
         public int Code { get; set; }
         public string Name { get; set; }
         public int Mendatory { get; set; }
+        public List<SubData> SubData { get; set; }
+    }
+
+    public class Mendatory
+    {
+        public int Code { get; set; }
+        public string Name { get; set; }
+        public int Selected { get; set; }
+        public List<SubData> SubData { get; set; }
+    }
+
+    public class NonMendatory
+    {
+        public int Code { get; set; }
+        public string Name { get; set; }
+        public int Selected { get; set; }
         public List<SubData> SubData { get; set; }
     }
 
@@ -159,6 +193,8 @@ namespace JSLLite.Models
         public int ItemCode { get; set; }
         public double Qty { get; set; }
         public double Price { get; set; }
+        public double MRP { get; set; }
+        public double Discount { get; set; }
         public double Amount { get; set; }
         public int UCode { get; set; }
 

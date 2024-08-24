@@ -316,7 +316,7 @@ namespace JSL_LITE.Controllers
                 string constr = GetConnectionString(Provider, CompCode, FY);
                 SQLHELPER con = new SQLHELPER(constr);
 
-                string sql = $"SELECT 'Quotation' AS Name, COUNT(VchCode) AS Value FROM ESJSLTRAN1 UNION ALL SELECT 'Pending Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 1 UNION ALL SELECT 'Completed Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 1 UNION ALL SELECT 'Replacement', COUNT(*) UNION ALL SELECT 'Invoice' , Count(23) FROM ESJSLTRAN1 WHERE QStatus = 2";
+                string sql = $"SELECT 'Quotation' AS Name, COUNT(VchCode) AS Value FROM ESJSLTRAN1 UNION ALL SELECT 'Pending Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 1 UNION ALL SELECT 'Completed Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 111 UNION ALL SELECT 'Replacement', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 112 UNION ALL SELECT 'Invoice' , Count(*) FROM ESJSLTRAN1 WHERE QStatus = 112";
                 DataTable DT1 = con.getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
@@ -393,7 +393,7 @@ namespace JSL_LITE.Controllers
                         string rootName = clsMain.MyString(grp["Name"]);
                         object price = GetProductMinAndMaxPrice(constr, rootCode);
                         JObject priceObject = JObject.FromObject(price);
-                        var images = GetMultipleImagesPath(Convert.ToString("Products"), clsMain.MyString(grp["Name"]));
+                        string images = GetSingleImagePath(Convert.ToString("Products"), clsMain.MyString(grp["Name"]));
 
                         // Find or create the root data object
                         GetProduct rootData = PList.FirstOrDefault(rd => rd.Code == rootCode);
@@ -406,7 +406,9 @@ namespace JSL_LITE.Controllers
                                 MinPrice = priceObject["MinPrice"].ToObject<decimal>(),
                                 MaxPrice = priceObject["MaxPrice"].ToObject<decimal>(),
                                 Images = images,
-                                DataItem = new List<DataItem>()
+                                //DataItem = new List<DataItem>()
+                                Mendatories = new List<Mendatory>(),
+                                NonMendatories = new List<NonMendatory>()
                             };
                             PList.Add(rootData);
                         }
@@ -427,28 +429,67 @@ namespace JSL_LITE.Controllers
                                 string subDataName = row["AttributeVal"].ToString();
                                 int AMendatory = clsMain.MyInt(row["AMendatory"]);
 
-                                // Find or create the data item object
-                                DataItem dataItem = rootData.DataItem.FirstOrDefault(di => di.Code == dataItemCode);
-                                if (dataItem == null)
-                                {
-                                    dataItem = new DataItem
-                                    {
-                                        Code = dataItemCode,
-                                        Name = dataItemName,
-                                        Mendatory = AMendatory,
-                                        SubData = new List<SubData>()
-                                    };
-                                    rootData.DataItem.Add(dataItem);
-                                }
+                                //// Find or create the data item object
+                                //DataItem dataItem = rootData.DataItem.FirstOrDefault(di => di.Code == dataItemCode);
+                                //if (dataItem == null)
+                                //{
+                                //    dataItem = new DataItem
+                                //    {
+                                //        Code = dataItemCode,
+                                //        Name = dataItemName,
+                                //        Mendatory = AMendatory,
+                                //        SubData = new List<SubData>()
+                                //    };
+                                //    rootData.DataItem.Add(dataItem);
+                                //}
 
-                                // Add the sub data object
-                                if (!dataItem.SubData.Any(sd => sd.Code == subDataCode))
+                                if (AMendatory == 1)
                                 {
-                                    dataItem.SubData.Add(new SubData
+                                    Mendatory mendatory = rootData.Mendatories.FirstOrDefault(di => di.Code == dataItemCode);
+                                    if (mendatory == null)
                                     {
-                                        Code = subDataCode,
-                                        Name = subDataName
-                                    });
+                                        mendatory = new Mendatory
+                                        {
+                                            Code = dataItemCode,
+                                            Name = dataItemName,
+                                            SubData = new List<SubData>()
+                                        };
+                                        rootData.Mendatories.Add(mendatory);
+                                    }
+
+                                    // Add the sub data object
+                                    if (!mendatory.SubData.Any(sd => sd.Code == subDataCode))
+                                    {
+                                        mendatory.SubData.Add(new SubData
+                                        {
+                                            Code = subDataCode,
+                                            Name = subDataName
+                                        });
+                                    }
+                                }
+                                else
+                                {
+                                    NonMendatory nonMendatory = rootData.NonMendatories.FirstOrDefault(di => di.Code == dataItemCode);
+                                    if (nonMendatory == null)
+                                    {
+                                        nonMendatory = new NonMendatory
+                                        {
+                                            Code = dataItemCode,
+                                            Name = dataItemName,
+                                            SubData = new List<SubData>()
+                                        };
+                                        rootData.NonMendatories.Add(nonMendatory);
+                                    }
+
+                                    // Add the sub data object
+                                    if (!nonMendatory.SubData.Any(sd => sd.Code == subDataCode))
+                                    {
+                                        nonMendatory.SubData.Add(new SubData
+                                        {
+                                            Code = subDataCode,
+                                            Name = subDataName
+                                        });
+                                    }
                                 }
                             }
                         }
@@ -529,7 +570,6 @@ namespace JSL_LITE.Controllers
                         int subDataCode = Convert.ToInt32(row["SATCode"]);
                         string subDataName = row["AttributeVal"].ToString();
                         int AMendatory = clsMain.MyInt(row["AMendatory"]);
-                        
 
                         // Find or create the root data object
                         GetProductsFiltWise rootData = PList.FirstOrDefault(rd => rd.Code == rootCode);
@@ -543,33 +583,76 @@ namespace JSL_LITE.Controllers
                                 MaxPrice = priceObject["MaxPrice"].ToObject<decimal>(),
                                 Images = images,
                                 SizeCharts = sizeCharts,
-                                DataItem = new List<DataItem>()
+                                //DataItem = new List<DataItem>()
+                                Mendatories = new List<Mendatory>(),
+                                NonMendatories = new List<NonMendatory>()
                             };
                             PList.Add(rootData);
                         }
 
                         // Find or create the data item object
-                        DataItem dataItem = rootData.DataItem.FirstOrDefault(di => di.Code == dataItemCode);
-                        if (dataItem == null)
-                        {
-                            dataItem = new DataItem
-                            {
-                                Code = dataItemCode,
-                                Name = dataItemName,
-                                Mendatory = AMendatory,
-                                SubData = new List<SubData>()
-                            };
-                            rootData.DataItem.Add(dataItem);
-                        }
+                        //DataItem dataItem = rootData.DataItem.FirstOrDefault(di => di.Code == dataItemCode);
+                        //if (dataItem == null)
+                        //{
+                        //    dataItem = new DataItem
+                        //    {
+                        //        Code = dataItemCode,
+                        //        Name = dataItemName,
+                        //        Mendatory = AMendatory,
+                        //        SubData = new List<SubData>()
+                        //    };
+                        //    rootData.DataItem.Add(dataItem);
+                        //}
 
-                        // Add the sub data object
-                        if (!dataItem.SubData.Any(sd => sd.Code == subDataCode))
+                        if (AMendatory == 1)
                         {
-                            dataItem.SubData.Add(new SubData
+                            // Find or create the data item object
+                            Mendatory mendatories = rootData.Mendatories.FirstOrDefault(di => di.Code == dataItemCode);
+                            if (mendatories == null)
                             {
-                                Code = subDataCode,
-                                Name = subDataName
-                            });
+                                mendatories = new Mendatory
+                                {
+                                    Code = dataItemCode,
+                                    Name = dataItemName,
+                                    SubData = new List<SubData>()
+                                };
+                                rootData.Mendatories.Add(mendatories);
+                            }
+
+                            // Add the sub data object
+                            if (!mendatories.SubData.Any(sd => sd.Code == subDataCode))
+                            {
+                                mendatories.SubData.Add(new SubData
+                                {
+                                    Code = subDataCode,
+                                    Name = subDataName
+                                });
+                            }
+                        }
+                        else
+                        {
+                            // Find or create the data item object
+                            NonMendatory nonMendatory = rootData.NonMendatories.FirstOrDefault(di => di.Code == dataItemCode);
+                            if (nonMendatory == null)
+                            {
+                                nonMendatory = new NonMendatory
+                                {
+                                    Code = dataItemCode,
+                                    Name = dataItemName,
+                                    SubData = new List<SubData>()
+                                };
+                                rootData.NonMendatories.Add(nonMendatory);
+                            }
+
+                            // Add the sub data object
+                            if (!nonMendatory.SubData.Any(sd => sd.Code == subDataCode))
+                            {
+                                nonMendatory.SubData.Add(new SubData
+                                {
+                                    Code = subDataCode,
+                                    Name = subDataName
+                                });
+                            }
                         }
                     }
                 }
@@ -583,7 +666,9 @@ namespace JSL_LITE.Controllers
                         MaxPrice = priceObject["MaxPrice"].ToObject<decimal>(),
                         Images = images,
                         SizeCharts = sizeCharts,
-                        DataItem = new List<DataItem>()
+                        //DataItem = new List<DataItem>()
+                        Mendatories = new List<Mendatory>(),
+                        NonMendatories = new List<NonMendatory>()
                     });
                 }
 
@@ -667,7 +752,7 @@ namespace JSL_LITE.Controllers
                     }
                 }
 
-                if (hCodes.Count == 0 || atCodes.Count == 0) { throw new Exception("HCode and ATCode are required in Items."); }
+                if (hCodes.Count == 0 || atCodes.Count == 0) { throw new Exception("Attribute And Subattribute Like 'HCode And ATCode are required' in Items."); }
                 string optFldCase = string.IsNullOrEmpty(OptFld) ? "''" : $"CASE WHEN LEN({OptFld}) > 0 THEN M1.{OptFld} ELSE '' END";
 
                 // Build the SQL query
@@ -694,7 +779,7 @@ namespace JSL_LITE.Controllers
                             UCode = Convert.ToInt32(row["UCode"]),
                             Stock = Convert.ToDecimal(row["Stock"]),
                             Qty = Convert.ToDecimal(1),
-                            Images = images,
+                            Images = images ?? new List<string>(),
                             Brand = Convert.ToString(row["Brand"]),
                             ItemDiscounts = priceDisc
                         });
@@ -717,7 +802,7 @@ namespace JSL_LITE.Controllers
             var distPrice = new ItemDiscount();
             try
             {
-                string sql = $"SELECT ISNULL(M1.[MasterCode], 0) as ItemCode, ISNULL(M2.[Name], '') as ItemName, ISNULL(M1.[D1], 0) as Price, ISNULL(M1.[D3], 0) As MRP, ISNULL(M1.[D2], 0) as Discount FROM ESJSLCustomer A LEFT JOIN MasterSupport M1 ON M1.MasterCode = {ItemCode} and M1.I1 = CASE WHEN ISNULL(A.CustType, 0) = 1 THEN 101 WHEN ISNULL(A.CustType, 0) = 2 THEN 102 WHEN ISNULL(A.CustType, 0) = 3 THEN 103 ELSE 101 END Inner Join Master1 M2 On M1.MasterCode = M2.Code And M2.MasterType = 6 WHERE M1.MasterCode = {ItemCode} ";
+                string sql = $"SELECT ISNULL(M1.[MasterCode], 0) as ItemCode, ISNULL(M2.[Name], '') as ItemName, (ISNULL(M1.[D1], 0) - ISNULL(M1.[D1], 0) * ISNULL(M1.[D2], 0) / 100) as Price, ISNULL(M1.[D3], 0) As MRP, ISNULL(M1.[D2], 0) as Discount FROM ESJSLCustomer A LEFT JOIN MasterSupport M1 ON M1.MasterCode = {ItemCode} and M1.I1 = CASE WHEN ISNULL(A.CustType, 0) = 1 THEN 101 WHEN ISNULL(A.CustType, 0) = 2 THEN 102 WHEN ISNULL(A.CustType, 0) = 3 THEN 103 ELSE 101 END Inner Join Master1 M2 On M1.MasterCode = M2.Code And M2.MasterType = 6 WHERE M1.MasterCode = {ItemCode} ";
                 if (AccCode > 0) sql += $" And A.[Code] = {AccCode}";
                 sql += $"Group By M1.[MasterCode], M2.[Name], M1.[D1], M1.[D3], M1.[D2]";
                 DataTable DT1 = new SQLHELPER(Constr).getTable(sql);
@@ -733,6 +818,38 @@ namespace JSL_LITE.Controllers
                 throw new Exception("Error fetching Item Category Wise Price And Discount: " + ex.Message);
             }
             return distPrice;
+        }
+
+        [HttpPost]
+        public dynamic GetItemCategoryWisePriceAndDiscountList(ListOfItem obj, string CompCode, string FY, int AccCode)
+        {
+            List<ItemWithDiscount> items = new List<ItemWithDiscount>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                foreach(var item in obj.ItemDetails)
+                {
+                    var ItemCode = item.ItemCode;
+
+                    if (ItemCode != null)
+                    {
+                        var priceDisc = new ItemDiscount();
+                        priceDisc = GetItemCategoryWisePriceAndDiscount(constr, Convert.ToInt32(AccCode), Convert.ToInt32(ItemCode));
+
+                        items.Add(new ItemWithDiscount
+                        {
+                            ItemCode = Convert.ToInt32(ItemCode),
+                            ItemName = clsMain.MyString(item?.ItemName),
+                            ItemDiscount = priceDisc,
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString() };
+            }
+            return new { Status = 1, Msg = "Success", Data = items };
         }
 
         [HttpPost]
@@ -913,7 +1030,7 @@ namespace JSL_LITE.Controllers
                 string constr = GetConnectionString(Provider, CompCode, FY);
                 SQLHELPER conobj = new SQLHELPER(constr);
 
-                string sql = $"Select ISNULL(B.[SNo], 0) as SNo,CONVERT(VARCHAR, B.[FollowdOn],105) as FDate, ISNULL(B.[Remarks], '') as Remarks From ESJSLTRAN1 A Inner Join ESJSLFOLLOWUP B ON A.VCHCODE = B.VCHCODE AND A.VCHTYPE = B.VCHTYPE WHERE A.[VCHCODE] = {VchCode} AND A.[VCHTYPE] = {VchType} ORDER BY B.[SNO]";
+                string sql = $"Select ISNULL(B.[SNo], 0) as SNo,CONVERT(VARCHAR, B.[FollowdOn],105) as FDate, ISNULL(B.[Remarks], '') as Remarks From ESJSLTRAN1 A Inner Join ESJSLFOLLOWUP B ON A.VCHCODE = B.VCHCODE AND A.VCHTYPE = B.VCHTYPE WHERE A.[VCHCODE] = {VchCode} AND A.[VCHTYPE] = {VchType} ORDER BY B.[SNO] Desc";
                 DataTable DT1 = conobj.getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
