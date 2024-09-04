@@ -444,6 +444,27 @@ namespace JSLLite.Models
         public decimal Amount { get; set; }
     }
 
+    public class STVerificationVchDT
+    {
+        public int VchCode { get; set; }
+        public List<STVItemDetail> STVItemDetails { get; set;}
+    }
+
+    public class STVItemDetail
+    {
+        public int VchCode { get; set; }
+        public string VchNo { get; set; }
+        public string Date { get; set; }
+        public int AccCode { get; set; }
+        public int ItemCode { get; set; }
+        public string ItemName { get; set; }
+        public int UCode { get; set; }
+        public string UName { get; set; }
+        public decimal Qty { get; set; }
+        public decimal Price { get; set; }
+        public decimal Amount { get; set; }
+    }
+
     public class SeriesConfigDt
     {
         public int SeriesCode { get; set; }
@@ -452,6 +473,17 @@ namespace JSLLite.Models
         public string TMCName { get; set; }
     }
 
+    public class RptFollowUp
+    {
+        public int VchCode { get; set; }
+        public string VchNo { get; set; }
+        public string Date { get; set; }
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Status { get; set; }
+        public string FollowedBy { get; set; }
+        public string FollowedOn { get; set; }
+    }
 
     public class SLogo
     {
