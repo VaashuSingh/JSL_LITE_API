@@ -14,18 +14,6 @@ namespace JSLLite.Models
         public string Name { get; set; }
     }
 
-    public class CustomerList
-    {
-        public int AccCode { get; set; }
-        public string AccName { get; set; }
-        public string Mobile { get; set; }
-        public string Email { get; set; }
-        public string FirmName { get; set; }
-        public string Address { get; set; }
-        public int CTCode { get; set; }
-        public string CTName { get; set; }
-
-    }
     public class User
     {
         public string UserName { get; set; }
@@ -36,10 +24,63 @@ namespace JSLLite.Models
         public string MCName { get; set; }
     }
 
-    public class GetDashboardQuotationDT
+    public class Dashboard
     {
         public string Name { get; set; }
         public int Values { get; set; }
+    }
+    public class CCustomer
+    {
+        public int Code { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Mobile { get; set; }
+        public string GSTNO { get; set; }
+        public int CNCode { get; set; }
+        public int STCode { get; set; }
+        public int CTCode { get; set; }
+        public string Address { get; set; }
+        public string OrgName { get; set; }
+        public string PAN { get; set; }
+        public int CustType { get; set; }
+        public string Users { get; set; }
+    }
+
+    public class GetCustomerDT
+    {
+        public int Code { get; set; }
+        public string Name { get; set; }
+        public string Mobile { get; set; }
+    }
+    public class CustomerList
+    {
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
+        public string FirmName { get; set; }
+        public string Address { get; set; }
+        public int CTCode { get; set; }
+        public string CTName { get; set; }
+    }
+
+    public class Customers
+    {
+        public int Code { get; set; }
+        public string Name { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
+        public string FirmName { get; set; }
+        public string GSTIN { get; set; }
+        public int CNCode { get; set; }
+        public string CNName { get; set; }
+        public int STCode { get; set; }
+        public string STName { get; set; }
+        public int CTCode { get; set; }
+        public string CTName { get; set; }
+        public string Address { get; set; }
+        public int CCode { get; set; }
+        public string CName { get; set; }
     }
 
     public class Category
@@ -185,6 +226,7 @@ namespace JSLLite.Models
         [XmlArray("ItemDetail")]
         [XmlArrayItem("ItemDetail")]
         public List<ItemDetail> ItemDetails { get; set; }
+        public List<BSDetail> BSDetails { get; set; }
     }
 
     public class ItemDetail
@@ -201,6 +243,26 @@ namespace JSLLite.Models
         [XmlArray("Attribute")]
         [XmlArrayItem("Attribute")]
         public List<Attribute> Attributes { get; set; }
+    }
+
+    public class BSDetail
+    {
+        public int SrNo { get; set; }
+        public int BSCode { get; set; }
+        public string BSName { get; set; }
+        public double BSPer { get; set; }
+        public double Amount { get; set; }
+        public string PercentOperatedOn { get; set; }
+        //    public string SrNo { get; set; }
+        //    public string BSName { get; set; }
+        //    public int BSCode { get; set; }
+        //    public string PercentVal { get; set; }
+        //    public string PercentOperatedOn { get; set; }
+        //    public string Amt { get; set; }
+        //    public string Date { get; set; }
+        //    public string VchNo { get; set; }
+        //    public string VchType { get; set; }
+        //    public string TmpVchCode { get; set; }
     }
 
     public class Attribute
@@ -233,6 +295,8 @@ namespace JSLLite.Models
         public decimal NetAmt { get; set; }
         public int QStatus { get; set; }
         public string QName { get; set; }
+        public int CTCode { get; set; }
+        public string CTName { get; set; }
     }
 
     public class GetSTVchDT
@@ -304,12 +368,26 @@ namespace JSLLite.Models
         public string Images { get; set; }
     }
 
-    public class ApprovedQuotation
+    public class Approvel
     {
         public int VchCode { get; set; }
         public int APCode { get; set; }
         public string Remarks { get; set; }
         public string ApprovedBy { get; set; }
+    }
+
+    public class PendingOrder
+    {
+        public int VchCode { get; set; }
+        public string VchNo { get; set; }
+        public string Date { get; set; }
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Mobile { get; set; }
+        public decimal TotQty { get; set; }
+        public decimal TransQty { get; set; }
+        public decimal BQty { get; set; }
+        public string Status { get; set; }
     }
 
     public class SalesManOrdersDt
@@ -325,6 +403,8 @@ namespace JSLLite.Models
         public decimal NetAmt { get; set; }
         public int SCode { get; set; }
         public string SName { get; set; }
+        public int CTCode { get; set; }
+        public string CTName { get; set; }
         public string Remarks { get; set; }
     }
 
@@ -345,25 +425,6 @@ namespace JSLLite.Models
         public string MonthsName { get; set; }
         public decimal QuotaionAmt { get; set; }
         public decimal InvoiceAmt { get; set; }
-    }
-
-    public class CCustomer
-    {
-        public string Name { get; set; }
-        public string Email { get; set; }
-        public string Mobile { get; set; }
-        public string GSTNO { get; set; }
-        public string Address { get; set; }
-        public string OrgName { get; set; }
-        public string PAN { get; set; }
-        public int CustType { get; set; }
-    }
-
-    public class GetCustomerDT
-    {
-        public int Code { get; set; }
-        public string Name { get; set; }
-        public string Mobile { get; set; }
     }
 
     public class GetPrice
@@ -473,7 +534,7 @@ namespace JSLLite.Models
         public string TMCName { get; set; }
     }
 
-    public class RptFollowUp
+    public class FollowUpRpt
     {
         public int VchCode { get; set; }
         public string VchNo { get; set; }
@@ -636,7 +697,6 @@ namespace JSLLite.Models
         public double BSPercent { get; set; }
         public int AppliedOn { get; set; }
         public int BSNature { get; set; }
-
         public int PercentOperatedOn { get; set; }
     }
     public class PardoshAccountList
@@ -1235,7 +1295,6 @@ namespace JSLLite.Models
         public string VchNo { get; set; }
         public string PartyName { get; set; }
         public string InvDate { get; set; }
-
         public string Num { get; set; }
         public string type { get; set; }
         public double DebitAmt { get; set; }
@@ -1273,19 +1332,6 @@ namespace JSLLite.Models
         public double TotalAmount { get; set; }
         public double Payable { get; set; }
         public double Reciveable { get; set; }
-    }
-    public class PendingOrder
-    {
-        public int RefCode { get; set; }
-        public string RefNo { get; set; }
-        public string RefDate { get; set; }
-        public string PartyName { get; set; }
-        public string ItemName { get; set; }
-
-        public string DueDate { get; set; }
-        public double TotalAmount { get; set; }
-        public string Unit { get; set; }
-        public double PQty { get; set; }
     }
     public class Company    
     {
@@ -1618,7 +1664,6 @@ namespace JSLLite.Models
     }
     public class BSDDetail
     {
-
         public int SrNo { get; set; }
         public string BSName { get; set; }
         public int BSCode { get; set; }
@@ -1636,25 +1681,6 @@ namespace JSLLite.Models
         public double BSPer { get; set; }
         public double Amount { get; set; }
         public string PercentOperatedOn { get; set; }
-    }
-    public class BSDetail
-    {
-        public int SrNo { get; set; }
-        public string BSName { get; set; }
-        public int BSCode { get; set; }
-        public double BSPer { get; set; }
-        public double Amount { get; set; }
-        public string PercentOperatedOn { get; set; }
-        //    public string SrNo { get; set; }
-        //    public string BSName { get; set; }
-        //    public int BSCode { get; set; }
-        //    public string PercentVal { get; set; }
-        //    public string PercentOperatedOn { get; set; }
-        //    public string Amt { get; set; }
-        //    public string Date { get; set; }
-        //    public string VchNo { get; set; }
-        //    public string VchType { get; set; }
-        //    public string TmpVchCode { get; set; }
     }
     public class VchReceipt
     {
