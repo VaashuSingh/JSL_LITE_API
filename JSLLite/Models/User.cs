@@ -5,6 +5,7 @@ using System.Web;
 using System.Xml.Serialization;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+using Newtonsoft.Json;
 
 namespace JSLLite.Models
 {
@@ -62,6 +63,7 @@ namespace JSLLite.Models
         public string Address { get; set; }
         public int CTCode { get; set; }
         public string CTName { get; set; }
+        public int Deactive { get; set; }
     }
 
     public class Customers
@@ -81,6 +83,7 @@ namespace JSLLite.Models
         public string Address { get; set; }
         public int CCode { get; set; }
         public string CName { get; set; }
+        public int Deactive { get; set; }
     }
 
     public class Category
@@ -108,7 +111,7 @@ namespace JSLLite.Models
     {
         public decimal Price { get; set; }
         public decimal MRP { get; set; }
-        public double Discount { get; set; } 
+        public double Discount { get; set; }
     }
 
     public class ItemWithDiscount
@@ -253,6 +256,7 @@ namespace JSLLite.Models
         public double BSPer { get; set; }
         public double Amount { get; set; }
         public string PercentOperatedOn { get; set; }
+
         //    public string SrNo { get; set; }
         //    public string BSName { get; set; }
         //    public int BSCode { get; set; }
@@ -297,6 +301,10 @@ namespace JSLLite.Models
         public string QName { get; set; }
         public int CTCode { get; set; }
         public string CTName { get; set; }
+        //[JsonIgnore] // Hide this property when status is 1
+        //public int Deactive { get; set; }
+        //public string DStatus { get; set; }
+        public int IsAdjustment { get; set; }
     }
 
     public class GetSTVchDT
@@ -461,7 +469,7 @@ namespace JSLLite.Models
     }
 
     public class STQuotItemsDt
-    { 
+    {
         public int ItemCode { get; set; }
         public string ItemName { get; set; }
         public int UCode { get; set; }
@@ -508,7 +516,7 @@ namespace JSLLite.Models
     public class STVerificationVchDT
     {
         public int VchCode { get; set; }
-        public List<STVItemDetail> STVItemDetails { get; set;}
+        public List<STVItemDetail> STVItemDetails { get; set; }
     }
 
     public class STVItemDetail
@@ -524,6 +532,56 @@ namespace JSLLite.Models
         public decimal Qty { get; set; }
         public decimal Price { get; set; }
         public decimal Amount { get; set; }
+    }
+
+    public class PendingPackingDT
+    {
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
+        public string GSTIN { get; set; }
+        public string Address { get; set; }
+        public double TQty { get; set; }
+    }
+    public class PendingPackingItemsDT
+    {
+        public int SNo { get; set; }
+        public int VchCode { get; set; }
+        public string VchNo { get; set; }
+        public int ItemCode { get; set; }
+        public string ItemName { get; set; }
+        public decimal Qty { get; set; }
+        public decimal PQty { get; set; }
+        public decimal Price { get; set; }
+        public decimal Amount { get; set; }
+    }
+
+    public class SPacking
+    {
+        public int VchCode { get; set; }
+        public string VchNo { get; set; }
+        public string VchDate { get; set; }
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Mobile { get; set; }
+        public double TotQty { get; set; }
+        public double TotAmt { get; set; }
+        public double NetAmt { get; set; }
+        public string Users { get; set; }
+        public List<BPItemDetail> BPItemDetails { get; set; }
+    }
+
+    public class BPItemDetail
+    {
+        public int OrderId { get; set; }
+        public string OrderNo { get; set; }
+        public int AccCode { get; set; }
+        public int SNo { get; set; }
+        public int ItemCode { get; set; }
+        public double Qty { get; set; }
+        public double Price { get; set; }
+        public double Amount { get; set; }
     }
 
     public class SeriesConfigDt
@@ -545,6 +603,23 @@ namespace JSLLite.Models
         public string FollowedBy { get; set; }
         public string FollowedOn { get; set; }
     }
+
+    public class CancelVoucher
+    {
+        public int VchCode { get; set; }
+        public List<CancelItem> CancelItems { get; set; }
+    }
+
+    public class CancelItem
+    {
+        public int OrderId { get; set; }
+        public string OrderNo { get; set; }
+        public int ItemCode { get; set; }
+        public decimal Qty { get; set; }
+        public decimal Price { get; set; }
+        public decimal Amount { get; set; }
+    }
+
 
     public class SLogo
     {
