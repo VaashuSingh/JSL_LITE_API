@@ -57,9 +57,6 @@ namespace JSL_LITE.Models
             public string C3 { get; set; }
             public string Mobile { get; set; }
             public string Contact { get; set; }
-
-
-
         }
 
 
@@ -297,6 +294,8 @@ namespace JSL_LITE.Models
             public string MasterName2 { get; set; }
             public string TranCurName { get; set; }
             public bool BrokerInvolved { get; set; }
+            public bool Cancelled { get; set; }
+            public int InputType { get; set; }
             public string BrokerName { get; set; }
             public BillingDetails BillingDetails { get; set; }
             public VchOtherInfoDetails VchOtherInfoDetails { get; set; }
@@ -625,6 +624,43 @@ namespace JSL_LITE.Models
 
         }
 
+        public class CRParty
+        {
+            public string UserId { get; set; }
+            public string Name { get; set; }
+            public string Email { get; set; }
+            public string MobileNo { get; set; }
+            public string GSTNO { get; set; }
+            public string CityCode { get; set; }
+            public string AreaCode { get; set; }
+            public string PinCode { get; set; }
+            public string StateCode { get; set; }
+            public string StateName { get; set; }
+            public string CountryName { get; set; }
+            public string Address1 { get; set; }
+            public string Address2 { get; set; }
+            public string Address3 { get; set; }
+            public string OwnerName { get; set; }
+            public string Latitude { get; set; }
+            public string Longitude { get; set; }
+            public string ConfmReg { get; set; }
+            public int AgrpCode { get; set; }
+            public string PAN { get; set; }
+            public int CRDays { get; set; }
+            public double CreditLimit { get; set; }
+            public string Base64Str { get; set; }
+            public int ImgType { get; set; }
+
+            public string Exte { get; set; }
+
+            public string AdharNo { get; set; }
+            public string Pass { get; set; }
+            public string Deviceid { get; set; }
+            public int Itype { get; set; }
+
+
+        }
+
         //public class ItemDetail
         //{
         //    public string Date { get; set; }
@@ -695,32 +731,27 @@ namespace JSL_LITE.Models
             public string BCNMode { get; set; }
         }
 
-        public string GetMasterCodeToName(int Provider, string ConStr, int Code)
+        public string GetMasterCodeToName(string ConStr, int Code)
         {
-            string Name = "";
             try
             {
-                DataTable dt = new DataTable();
+                DataTable dt = new DataTable(); string Name = string.Empty;
 
                 string str = "Select Name From Master1 Where Code = " + Code + "";
-                if (Provider == 1)
+                dt = new SQLHELPER(ConStr).getTable(str);
+                if (dt != null && dt.Rows.Count > 0)
                 {
-                    dt = new OLEDBHELPER(ConStr).getTable(str);
+                    return Name = clsMain.MyString(dt.Rows[0]["Name"]);
                 }
                 else
                 {
-                    dt = new SQLHELPER(ConStr).getTable(str);
-                }
-                if (dt != null && dt.Rows.Count > 0)
-                {
-                    Name = clsMain.MyString(dt.Rows[0]["Name"]);
+                    return "";
                 }
             }
             catch
             {
                 return "";
             }
-            return Name;
         }
 
         public STPTData GetSTPTData(int Provider, string ConStr, String Name, int MasterType)

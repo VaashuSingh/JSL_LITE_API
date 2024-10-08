@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -19,6 +20,7 @@ using System.Web.Hosting;
 using System.Web.Http;
 using System.Xml;
 using System.Xml.Serialization;
+using static JSL_LITE.Models.BusyVoucher;
 
 //http://103.25.128.155/SFAApi/CatalogImages/
 //http://103.207.64.9:99/SFA/CatalogImages/
@@ -322,7 +324,7 @@ namespace JSL_LITE.Controllers
                 DataTable DT1 = conobj.getTable(sql);
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
-                    foreach(DataRow item in DT1.Rows)
+                    foreach (DataRow item in DT1.Rows)
                     {
                         UNList.Add(new UnknowList
                         {
@@ -345,7 +347,7 @@ namespace JSL_LITE.Controllers
         }
 
         [HttpGet]
-        public dynamic GetDashboardTotalQuotationDetails(string CompCode, string FY, string Users)
+        public dynamic GetDashboardTotalCardDetails(string CompCode, string FY, string Users)
         {
             List<Dashboard> dash = new List<Dashboard>();
             try
@@ -362,8 +364,8 @@ namespace JSL_LITE.Controllers
                     string UName = clsMain.MyString(DT.Rows[0]["UTName"]);
                     int MCCode = Convert.ToInt32(DT.Rows[0]["MCCode"]);
 
-                    switch (UTCode) 
-                    { 
+                    switch (UTCode)
+                    {
                         case 1:
                             sql = $"SELECT 'Quotation' AS Name, COUNT(VchCode) AS Value FROM ESJSLTRAN1 WHERE CREATEDBY = '{Users}' UNION ALL SELECT 'Pending Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 1 And CREATEDBY = '{Users}' UNION ALL SELECT 'Completed Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 111 UNION ALL SELECT 'Replacement', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 112 UNION ALL SELECT 'Invoice' , Count(*) FROM ESJSLTRAN1 WHERE QStatus = 112";
                             break;
@@ -371,7 +373,15 @@ namespace JSL_LITE.Controllers
                             sql = $"SELECT 'Quotation' AS Name, COUNT(VchCode) AS Value FROM ESJSLTRAN1 WHERE CREATEDBY = '{Users}' UNION ALL SELECT 'Pending Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 1 And CREATEDBY = '{Users}' UNION ALL SELECT 'Completed Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 111 UNION ALL SELECT 'Replacement', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 112 UNION ALL SELECT 'Invoice' , Count(*) FROM ESJSLTRAN1 WHERE QStatus = 112";
                             break;
                         case 3:
-                            sql = $"SELECT 'Quotation' AS Name, COUNT(VchCode) AS Value FROM ESJSLTRAN1 WHERE CREATEDBY = '{Users}' UNION ALL SELECT 'Pending Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 1 And CREATEDBY = '{Users}' UNION ALL SELECT 'Completed Orders', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 111 UNION ALL SELECT 'Replacement', COUNT(*) FROM ESJSLTRAN1 WHERE QStatus = 112 UNION ALL SELECT 'Invoice' , Count(*) FROM ESJSLTRAN1 WHERE QStatus = 112";
+                            sql = $"Select COUNT(*) as [Value], 'Pending Verification' as [Name] From ESJSLTran1 Where VchType = 109 And ([Verification] Is Null OR [Verification] = 0) And [Cancelled] <> 1 " +
+                            " UNION ALL" +
+                            " Select COUNT(*) as [Value], 'Completed Verification' as [Name]  From ESJSLTran1 Where VchType = 109 And [Verification] = 1 And [Cancelled] <> 1 " +
+                            " UNION ALL" +
+                            " Select [Value], [Name] From (SELECT CASE WHEN A.TotQty = ISNULL(A.TransQty, 0) THEN 'Completed Packing' ELSE 'Pending Packing' END AS[Name], COUNT(*) As[Value] FROM (SELECT A.VchCode, A.RefNo, ISNULL(T.TotQty, 0) AS TotQty, ISNULL(T1.TransQty, 0) AS TransQty FROM (SELECT DISTINCT A.OrderId1 AS VchCode, ISNULL(A.[RefNo], '') AS RefNo FROM ESJSLRefTran A INNER JOIN ESJSLTran1 B ON A.OrderId1 = B.VchCode AND A.VchType = B.VchType WHERE A.VchType = 109 AND A.Method IN (1, 2) AND B.[Verification] = 1 AND B.Cancelled <> 1) A " +
+                            " INNER JOIN" +
+                            " (SELECT A.VchCode, A.RefNo, SUM(A.TQty) AS TotQty FROM (SELECT A.VchCode, A.RefNo, A.ItemCode, SUM(A.Qty) AS TQty FROM ESJSLRefTran A INNER JOIN Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 WHERE A.Method = 1 AND A.VchType = 109 GROUP BY A.VchCode, A.RefNo, A.ItemCode) A GROUP BY A.VchCode, A.RefNo) T ON A.VchCode = T.VchCode AND A.RefNo = T.RefNo " +
+                            " LEFT JOIN " +
+                            " (SELECT A.VchCode, A.RefNo, SUM(A.TRQty) AS TransQty FROM (SELECT A.OrderId1 as VchCode, A.RefNo, A.ItemCode, (ISNUll(SUM(A.Qty), 0) * (-1)) AS TRQty FROM ESJSLRefTran A INNER JOIN Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 WHERE A.Method = 2 AND A.VchType = 109 GROUP BY A.OrderId1, A.RefNo, A.ItemCode) A GROUP BY A.VchCode, A.RefNo) T1 ON A.VchCode = T1.VchCode AND A.RefNo = T1.RefNo) A GROUP BY CASE WHEN A.TotQty = (ISNULL(A.TransQty, 0)) THEN 'Completed Packing' ELSE 'Pending Packing' END) A";
                             break;
                         case 4:
                             //sql = $"SELECT 'Pending' as [Name], Count(OrderId) as Value From (Select IsNull(A.[OrderID], 0) As OrderId from ESJSLRefTran A Inner join Master1 B On A.ItemCode = B.Code Inner Join ESJSLTran1 T1 On A.OrderID = T1.VchCode Where B.MasterType = 6 And B.CM6 = {MCCode} And A.RecType = 1 And T1.VchType = 108 And T1.QStatus = 1 Group by A.OrderID Having Sum(A.Qty) >= 0.01) A UNION ALL Select 'Completed' as [Name], Count(VchCode) as Value From ESJSLTRAN1 Where VchType = 109 And I1 = {MCCode}";
@@ -410,6 +420,86 @@ namespace JSL_LITE.Controllers
         }
 
         [HttpGet]
+        public dynamic GetDashboardVchUpdateList(string CompCode, string FY, int TranType, int MCCode, string StartDate, string EndDate)
+        {
+            List<VchUpdateList> PORD = new List<VchUpdateList>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER conobj = new SQLHELPER(constr);
+                string formattedStartDate = string.IsNullOrEmpty(StartDate) ? "" : Busyhelper.FormatDate(StartDate);
+                string formattedEndDate = string.IsNullOrEmpty(EndDate) ? "" : Busyhelper.FormatDate(EndDate); string sql = string.Empty;
+
+                switch (TranType)
+                {
+                    case 1:
+                        //string sql = $"SELECT A.VchCode, A.RefNo, A.VchDate, A.AccCode, A.AccName, A.Mobile, ISNULL(T.TotQty, 0) AS TotQty, (ISNULL(TR.TransQty, 0) * (-1)) AS TransQty, (IsNull(T.TotQty, 0) - (IsNull(TR.TransQty, 0) * (-1))) as BQty, (CASE WHEN IsNull(T.TotQty, 0) - (IsNull(TR.TransQty, 0) * (-1)) = 0 THEN 'Completed' ELSE 'Pending' END) as [Status] FROM " +
+                        //        $"(SELECT DISTINCT A.OrderId as VchCode, IsNull(A.[RefNo], '') as RefNo, CONVERT(VARCHAR, B.Date, 105) as VchDate, IsNull(B.MasterCode1, 0) as AccCode, IsNull(B.CustName, '') as AccName, IsNull(B.CMobile, '') as Mobile FROM ESJSLRefTran A Inner Join ESJSLTran1 B On A.OrderId = B.VchCode And A.VchType = B.VchType WHERE A.VchType = 108 AND A.Method = 2 And B.[QStatus] = 1 And B.Cancelled <> 1";
+                        //        if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And B.[Date] >= '{formattedStartDate}' And B.[Date] <= '{formattedEndDate}' " ;
+                        //        sql += ") A LEFT JOIN (SELECT A.VchCode, A.RefNo, SUM(A.TQty) AS TotQty FROM (SELECT A.VchCode, A.RefNo, A.ItemCode, SUM(A.Qty) AS TQty FROM ESJSLRefTran A INNER JOIN Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 Where A.Method = 1 AND A.VchType = 108 AND M.CM6 = {MCCode} Group By A.VchCode, A.RefNo, A.ItemCode) A Group By A.VchCode, A.RefNo) T ON A.VchCode = T.VchCode AND A.RefNo = T.RefNo LEFT JOIN (SELECT A.OrderId AS VchCode, A.RefNo, SUM(A.TRQty) AS TransQty FROM (SELECT A.OrderId, A.RefNo, A.ItemCode, SUM(A.Qty) AS TRQty FROM ESJSLRefTran A INNER JOIN  Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 Where A.Method = 2 AND A.VchType = 108 AND M.CM6 = {MCCode} Group By A.OrderId, A.RefNo, A.ItemCode) A Group By A.OrderId, A.RefNo) TR ON A.VchCode = TR.VchCode AND A.RefNo = TR.RefNo";
+
+                        sql = $"WITH Totals AS (SELECT A.VchCode, A.RefNo, ISNULL(T.TotQty, 0) AS TotQty FROM (SELECT DISTINCT A.OrderId AS VchCode, ISNULL(A.[RefNo], '') AS RefNo FROM ESJSLRefTran A INNER JOIN ESJSLTran1 B ON A.OrderId = B.VchCode AND A.VchType = B.VchType WHERE A.VchType = 108 AND A.Method IN (1,2) AND B.[QStatus] = 1 AND B.Cancelled <> 1";
+                        if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And B.[Date] >= '{formattedStartDate}' And B.[Date] <= '{formattedEndDate}' ";
+                        sql += $") A INNER JOIN (SELECT A.VchCode, A.RefNo, SUM(A.TQty) AS TotQty FROM (SELECT A.VchCode, A.RefNo, A.ItemCode, SUM(A.Qty) AS TQty FROM ESJSLRefTran A INNER JOIN Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 WHERE A.Method = 1 AND A.VchType = 108 AND M.CM6 = {MCCode} GROUP BY A.VchCode, A.RefNo, A.ItemCode) A GROUP BY A.VchCode, A.RefNo) T ON A.VchCode = T.VchCode AND A.RefNo = T.RefNo), " +
+                        $"Transfers AS(SELECT A.VchCode, A.RefNo, ISNULL(TR.TransQty, 0) AS TransQty FROM(SELECT DISTINCT A.OrderId AS VchCode, ISNULL(A.[RefNo], '') AS RefNo FROM ESJSLRefTran A INNER JOIN ESJSLTran1 B ON A.OrderId = B.VchCode AND A.VchType = B.VchType WHERE A.VchType = 108 AND A.Method IN (1, 2) AND B.[QStatus] = 1 AND B.Cancelled <> 1 ";
+                        if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And B.[Date] >= '{formattedStartDate}' And B.[Date] <= '{formattedEndDate}' ";
+                        sql += $") A INNER JOIN (SELECT A.OrderId AS VchCode, A.RefNo, SUM(A.TRQty) AS TransQty FROM (SELECT A.OrderId, A.RefNo, A.ItemCode, SUM(A.Qty) AS TRQty FROM ESJSLRefTran A INNER JOIN Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 WHERE A.Method = 2 AND A.VchType = 108 AND M.CM6 = {MCCode} GROUP BY A.OrderId, A.RefNo, A.ItemCode) A GROUP BY A.OrderId, A.RefNo) TR ON A.VchCode = TR.VchCode AND A.RefNo = TR.RefNo) " +
+                        $"SELECT T.VchCode, CONVERT(VARCHAR, T1.Date, 105) as VchDate, IsNull(T.RefNo, '') as RefNo, IsNull(T1.MasterCode1, 0) as AccCode, ISNULL(T2.Name, '') as AccName, ISNULL(T2.Mobile, '') as Mobile, IsNull(T2.[Email], '') as Email, IsNull(T2.[GSTIN], '') as GSTIN, IsNull(T2.[Address], '') as Address, ISNULL(T.TotQty, 0) as TotQty, (ISNULL(Tr.TransQty, 0) * (-1)) AS TransQty, (ISNULL(T.TotQty, 0) - (ISNULL(Tr.TransQty, 0) * (-1))) AS BalQty, CASE WHEN T.TotQty = (ISNULL(Tr.TransQty, 0) * (-1)) THEN 'Completed' ELSE 'Pending' END AS VoucherStatus FROM Totals T LEFT JOIN Transfers Tr ON T.VchCode = Tr.VchCode AND T.RefNo = Tr.RefNo LEFT JOIN ESJSLTRAN1 T1 ON T.VchCode = T1.VchCode LEFT JOIN ESJSLCustomer T2 ON T1.MasterCode1 = T2.Code ORDER BY T.VchCode";
+
+                        break;
+                    case 2:
+                        sql = $"Select VchCode, IsNull(A.[VchNo], '') as RefNo, IsNull(A.[Date], '') as [VchDate], IsNull(A.[MasterCode1], 0) as AccCode, IsNull(M1.[Name], '') as AccName, IsNull(M1.[Mobile], '') as Mobile,  IsNull(M1.[Email], '') as Email, IsNull(M1.[GSTIN], '') as GSTIN, IsNull(M1.[Address], '') as Address, IsNull(M1.[Email], '') as Mobile, IsNull(A.[TotQty], 0) as TotQty, 0 as TransQty, 0 as BalQty, IsNull(A.[Verification], 0) as [Status], (CASE WHEN A.[Verification] = 1 THEN 'Verified' ELSE 'Pending For Verification' END) as VoucherStatus From ESJSLTRAN1 A INNER JOIN ESJSLCustomer M1 On A.MasterCode1 = M1.Code Where VchType = 109 And Cancelled <> 1";
+                        if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And A.[Date] >= '{formattedStartDate}' And A.[Date] <= '{formattedEndDate}' ";
+
+                        break;
+                    case 3:
+                        sql = $"WITH Totals AS (SELECT A.VchCode, A.RefNo, ISNULL(T.TotQty, 0) AS TotQty FROM (SELECT DISTINCT A.OrderId1 AS VchCode, ISNULL(A.[RefNo], '') AS RefNo FROM ESJSLRefTran A INNER JOIN ESJSLTran1 B ON A.OrderId1 = B.VchCode AND A.VchType = B.VchType WHERE A.VchType = 109 AND A.Method IN (1,2) AND B.[Verification] = 1 AND B.Cancelled <> 1";
+                        if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And B.[Date] >= '{formattedStartDate}' And B.[Date] <= '{formattedEndDate}' ";
+                        sql += $") A INNER JOIN (SELECT A.VchCode, A.RefNo, SUM(A.TQty) AS TotQty FROM (SELECT A.VchCode, A.RefNo, A.ItemCode, SUM(A.Qty) AS TQty FROM ESJSLRefTran A INNER JOIN Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 WHERE A.Method = 1 AND A.VchType = 109 GROUP BY A.VchCode, A.RefNo, A.ItemCode) A GROUP BY A.VchCode, A.RefNo) T ON A.VchCode = T.VchCode AND A.RefNo = T.RefNo), " +
+                        $"Transfers AS(SELECT A.VchCode, A.RefNo, ISNULL(TR.TransQty, 0) AS TransQty FROM (SELECT DISTINCT A.OrderId1 AS VchCode, ISNULL(A.[RefNo], '') AS RefNo FROM ESJSLRefTran A INNER JOIN ESJSLTran1 B ON A.OrderId1 = B.VchCode AND A.VchType = B.VchType WHERE A.VchType = 109 AND A.Method IN (1, 2) AND B.[Verification] = 1 AND B.Cancelled <> 1 ";
+                        if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And B.[Date] >= '{formattedStartDate}' And B.[Date] <= '{formattedEndDate}' ";
+                        sql += $") A INNER JOIN (SELECT A.VchCode, A.RefNo, SUM(A.TRQty) AS TransQty FROM (SELECT A.OrderId1 as VchCode, A.RefNo, A.ItemCode, SUM(A.Qty) AS TRQty FROM ESJSLRefTran A INNER JOIN Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 WHERE A.Method = 2 AND A.VchType = 109 GROUP BY A.OrderId1, A.RefNo, A.ItemCode) A GROUP BY A.VchCode, A.RefNo) TR ON A.VchCode = TR.VchCode AND A.RefNo = TR.RefNo) " +
+                        $"SELECT T.VchCode, CONVERT(VARCHAR, T1.Date, 105) as VchDate, IsNull(T.RefNo, '') as RefNo, IsNull(T1.MasterCode1, 0) as AccCode, ISNULL(T2.Name, '') as AccName, ISNULL(T2.Mobile, '') as Mobile, IsNull(T2.[Email], '') as Email, IsNull(T2.[GSTIN], '') as GSTIN, IsNull(T2.[Address], '') as Address, ISNULL(T.TotQty, 0) as TotQty, (ISNULL(Tr.TransQty, 0) * (-1)) AS TransQty, (ISNULL(T.TotQty, 0) - (ISNULL(Tr.TransQty, 0) * (-1))) AS BalQty, CASE WHEN T.TotQty = (ISNULL(Tr.TransQty, 0) * (-1)) THEN 'Completed' ELSE 'Pending' END AS VoucherStatus FROM Totals T LEFT JOIN Transfers Tr ON T.VchCode = Tr.VchCode AND T.RefNo = Tr.RefNo LEFT JOIN ESJSLTRAN1 T1 ON T.VchCode = T1.VchCode LEFT JOIN ESJSLCustomer T2 ON T1.MasterCode1 = T2.Code ORDER BY T.VchCode";
+
+                        break;
+                }
+
+                DataTable DT1 = conobj.getTable(sql);
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach (DataRow item in DT1.Rows)
+                    {
+                        PORD.Add(new VchUpdateList
+                        {
+                            VchCode = Convert.ToInt32(item["VchCode"]),
+                            VchNo = clsMain.MyString(item["RefNo"]),
+                            Date = clsMain.MyString(item["VchDate"]),
+                            AccCode = Convert.ToInt32(item["AccCode"]),
+                            AccName = clsMain.MyString(item["AccName"]),
+                            Mobile = clsMain.MyString(item["Mobile"]),
+                            Email = clsMain.MyString(item["Email"]),
+                            GSTIN = clsMain.MyString(item["GSTIN"]),
+                            Address = clsMain.MyString(item["Address"]),
+                            TotQty = Convert.ToDecimal(item["TotQty"]),
+                            TransQty = Convert.ToDecimal(item["TransQty"]),
+                            BQty = Convert.ToDecimal(item["BalQty"]),
+                            Status = clsMain.MyString(item["VoucherStatus"])
+                        });
+                    }
+                }
+                else
+                {
+                    throw new Exception("Data Not Found !!!");
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString() };
+            }
+            return new { Status = 1, Msg = "Success", Data = PORD };
+        }
+
+        [HttpGet]
         public dynamic GetCategory(string CompCode, string FY)
         {
             List<Category> SPT = new List<Category>();
@@ -418,7 +508,7 @@ namespace JSL_LITE.Controllers
                 string constr = GetConnectionString(Provider, CompCode, FY);
                 string sql = ""; //string img = "https://random.imagecdn.app/500/500";
 
-                sql = $"Select Distinct T.I1 as [Code], M1.[Name] From ESAttributesMappingConfig T left Join Master1 M1 On T.I1 = M1.Code Order by M1.Name";
+                sql = $"Select Distinct T.I1 as [Code], M1.[Name] From ESAttributesMappingConfig T left Join Master1 M1 On T.I1 = M1.Code Where T.MasterType = 1 And M1.ParentGrp = 0 Order by M1.Name";
                 DataTable DT1 = Provider == 1 ? new OLEDBHELPER(constr).getTable(sql) : new SQLHELPER(constr).getTable(sql);
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
@@ -449,7 +539,7 @@ namespace JSL_LITE.Controllers
             {
                 string constr = GetConnectionString(Provider, CompCode, FY); //string img = "https://random.imagecdn.app/500/500";
                 SQLHELPER obj = new SQLHELPER(constr);
-                string SubGrpStr = GrpCode > 0 ? SubGrpStr = GetAllItemSubGroups(GrpCode, constr) : "";
+                string SubGrpStr = GrpCode > 0 ? GetAllItemSubGroups(GrpCode, constr) : "";
 
                 string sql = $"Select M1.ParentGrp as Code,M2.Name FROM MASTER1 M1 Inner Join Master1 M2 On M1.ParentGrp = M2.Code WHERE M1.MASTERTYPE = 6";
                 if (SubGrpStr.Length > 0) sql += $" AND M1.ParentGrp In (" + SubGrpStr + ")";
@@ -613,17 +703,17 @@ namespace JSL_LITE.Controllers
         }
 
         [HttpGet]
-        public dynamic GetProductsFilterWise(int IGrpCode, string CompCode, string FY)
+        public dynamic GetProductsFilterWise(string CompCode, string FY, int IGrpCode)
         {
             List<GetProductsFiltWise> PList = new List<GetProductsFiltWise>();
             try
             {
-                string constr = GetConnectionString(Provider, CompCode, FY); //string img = "https://random.imagecdn.app/500/500";
+                string constr = GetConnectionString(Provider, CompCode, FY);
                 SQLHELPER obj = new SQLHELPER(constr);
                 string IgrpStr = GetAllParentGroups(IGrpCode, constr);
                 object price = GetProductMinAndMaxPrice(constr, IGrpCode);
                 JObject priceObject = JObject.FromObject(price);
-                string igrpname = GetBusyMasterCode2NameIfExist(constr, IGrpCode, 5); 
+                string igrpname = GetBusyMasterCode2NameIfExist(constr, IGrpCode, 5);
                 var images = GetMultipleImagesPath(Convert.ToString("Products"), clsMain.MyString(igrpname));
                 var sizeChartData = GetProductSubAttribute(constr, IGrpCode);
                 var sizeCharts = sizeChartData?.Data as List<SizeChart> ?? new List<SizeChart>();
@@ -757,7 +847,7 @@ namespace JSL_LITE.Controllers
             var lsize = new List<SizeChart>();
             try
             {
-                string sql = $"select IsNull(A.[I2], 0) as UCode, IsNull(B.[Name], '') as UName, IsNull(A.[M1], '') as Size, IsNull(A.[M2], '') as Box From ESAttributesMappingConfig A Inner Join ESMaster1 B On A.I2 = B.Code Where A.I1 = {IGrpCode} And A.MasterType = 2 Group By A.[I2], B.[Name], A.[M1], A.[M2] Order By B.[Name]";
+                string sql = $"select IsNull(A.[I2], 0) as UCode, IsNull(B.[Name], '') as UName, IsNull(A.[M1], '') as Size, IsNull(A.[M2], '') as Box From ESAttributesMappingConfig A Inner Join ESMaster1 B On A.I3 = B.Code Where A.I1 = {IGrpCode} And A.MasterType = 2 Group By A.[I2], B.[Name], A.[M1], A.[M2] Order By B.[Name]";
                 DataTable DT1 = new SQLHELPER(constr).getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
@@ -827,11 +917,11 @@ namespace JSL_LITE.Controllers
                 string optFldCase = string.IsNullOrEmpty(OptFld) ? "''" : $"CASE WHEN LEN({OptFld}) > 0 THEN M1.{OptFld} ELSE '' END";
 
                 // Build the SQL query
-                string sql = $"Select Top 1 A.MasterCode as ItemCode, M.[Name] as ItemName, M.[CM1] as UCode,M2.[Name] as UName, M.[D2] as Price, {optFldCase} as Brand, Sum(A.Qty) as Stock From (Select A.MasterCode, A.D1 as Qty From Folio1 A Where A.MasterType = 6 Union All Select MasterCode1, IsNull(Sum(Value1),0) as Qty From Tran2 A inner Join Master1 B On A.MasterCode1 = B.Code And A.MasterCode2 = B.CM6 Where A.Date <= '{formattedDate}' And A.RecType = 2 Group By MasterCode1) A inner Join Master1 M On A.MasterCode = M.Code Left Join MasterAddressInfo M1 On A.MasterCode = M1.MasterCode Left Join Master1 M2 on M.[CM1] = M2.Code";
+                string sql = $"Select Top 1 A.MasterCode as ItemCode, M.[Name] as ItemName, IsNull(M3.[Name], '') as GSTSlabs, IsNull(M4.[D2], 0) as GSTRate, M.[CM1] as UCode, M2.[Name] as UName, M.[D2] as Price, {optFldCase} as Brand, Sum(A.Qty) as Stock From (Select A.MasterCode, A.D1 as Qty From Folio1 A Where A.MasterType = 6 Union All Select MasterCode1, IsNull(Sum(Value1),0) as Qty From Tran2 A inner Join Master1 B On A.MasterCode1 = B.Code And A.MasterCode2 = B.CM6 Where A.Date <= '{formattedDate}' And A.RecType = 2 Group By MasterCode1) A inner Join Master1 M On A.MasterCode = M.Code Left Join MasterAddressInfo M1 On A.MasterCode = M1.MasterCode LEFT JOIN Master1 M2 ON M.[CM1] = M2.Code LEFT JOIN Master1 M3 ON M.[CM8] = M3.[Code] LEFT JOIN MasterSupport M4 on M.[CM8] = M4.[MasterCode] And M4.[I3] = 1 ";
                 for (int i = 0; i < atCodes.Count; i++) { R++; sql += $" Inner Join ESAttributesMappingConfig E{R} On M.Code = E{R}.I1 AND E{R}.MasterType = 101"; }
                 sql += $" Where M.[ParentGrp] = {grpCode}"; R = 0;
                 for (int i = 0; i < atCodes.Count; i++) { R++; sql += $" And E{R}.I3 = {atCodes[i]}"; }                                     //sql += $"AND E.I2 IN ({string.Join(",", hCodes)}) AND E.I3 IN ({string.Join(",", atCodes)}) " +
-                sql += string.IsNullOrEmpty(OptFld) ? $" Group By A.[MasterCode], M.[Name], M.[CM1],M2.[Name], M.[D2] Order By M.[Name]" : $" Group By A.[MasterCode], M.[Name], M.[CM1],M2.[Name], M.[D2], {OptFld} Order By M.[Name]";
+                sql += string.IsNullOrEmpty(OptFld) ? $" Group By A.[MasterCode], M.[Name], M3.[Name], M4.[D2], M.[CM1], M2.[Name], M.[D2] Order By M.[Name]" : $" Group By A.[MasterCode], M3.[Name], M4.[D2], M.[Name], M.[CM1],M2.[Name], M.[D2], {OptFld} Order By M.[Name]";
 
                 DataTable DT1 = obj.getTable(sql);
 
@@ -846,6 +936,8 @@ namespace JSL_LITE.Controllers
                         {
                             ItemName = row["ItemName"].ToString(),
                             ItemCode = Convert.ToInt32(row["ItemCode"]),
+                            GSTSlabs = clsMain.MyString(row["GSTSlabs"]),
+                            GSTRate = Convert.ToInt32(row["GSTRate"]),
                             UName = row["UName"].ToString(),
                             UCode = Convert.ToInt32(row["UCode"]),
                             Stock = Convert.ToDecimal(row["Stock"]),
@@ -876,11 +968,11 @@ namespace JSL_LITE.Controllers
                 string sql = string.Empty;
                 if (AccCode == 0)
                 {
-                    sql = $"Select ISNULL(M2.[D1], 0) as Price, (ISNULL(M2.[D3], 0) - ISNULL(M2.[D3], 0) * ISNULL(M2.[D2], 0) / 100) as MRP, ISNULL(M2.[D2], 0) as Discount From Master1 M1 Inner Join MasterSupport M2 On M1.Code = M2.MasterCode Where M1.MasterType = 6 And M1.Code = {ItemCode} And M2.[I1] = 101 Group By M2.D1, M2.D2, M2.D3";
+                    sql = $"Select ISNULL(M1.[D2], 0) as MRP, (CASE WHEN IsNull(M2.[D2], 0) = 0 THEN M1.[D2] ELSE IsNull((M1.[D2] - (((M1.[D2]) * (M2.[D2])) / 100)), 0) END) as Price, ISNULL(M2.[D2], 0) as Discount From Master1 M1 LEFT JOIN MasterSupport M2 ON M1.Code = M2.MasterCode And M2.[I1] = 103 Where M1.MasterType = 6 And M1.Code = {ItemCode} Group By M1.D2, M2.D2";
                 }
                 else
                 {
-                    sql = $"SELECT ISNULL(M1.[MasterCode], 0) as ItemCode, ISNULL(M2.[Name], '') as ItemName, ISNULL(M1.[D1], 0) as Price, (ISNULL(M1.[D3], 0) - ISNULL(M1.[D3], 0) * ISNULL(M1.[D2], 0) / 100) as MRP, ISNULL(M1.[D2], 0) as Discount FROM ESJSLCustomer A LEFT JOIN MasterSupport M1 ON M1.MasterCode = {ItemCode} and M1.I1 = CASE WHEN ISNULL(A.CustType, 0) = 1 THEN 101 WHEN ISNULL(A.CustType, 0) = 2 THEN 102 WHEN ISNULL(A.CustType, 0) = 3 THEN 103 ELSE 101 END Inner Join Master1 M2 On M1.MasterCode = M2.Code And M2.MasterType = 6 WHERE M1.MasterCode = {ItemCode} And A.[Code] = {AccCode} Group By M1.[MasterCode], M2.[Name], M1.[D1], M1.[D2], M1.[D3]";
+                    sql = $"SELECT ISNULL(M1.[D2], 0) as MRP, (CASE WHEN IsNull(M2.[D2], 0) = 0 THEN M1.[D2] ELSE IsNull((M1.[D2] - (((M1.[D2]) * (M2.[D2])) / 100)), 0) END) as Price, ISNULL(M2.[D2], 0) as Discount FROM ESJSLCustomer A LEFT JOIN Master1 M1 On M1.Code = {ItemCode} And M1.MasterType = 6 LEFT JOIN MasterSupport M2 ON M2.MasterCode = M1.Code And M2.I1 = CASE WHEN ISNULL(A.CustType, 0) = 1 THEN 101 WHEN ISNULL(A.CustType, 0) = 2 THEN 102 WHEN ISNULL(A.CustType, 0) = 3 THEN 103 ELSE 103 END WHERE A.[Code] = {AccCode} Group By M1.[D2], M2.[D2]";
                 }
                 DataTable DT1 = new SQLHELPER(Constr).getTable(sql);
                 if (DT1 != null && DT1.Rows.Count > 0)
@@ -904,7 +996,7 @@ namespace JSL_LITE.Controllers
             try
             {
                 string constr = GetConnectionString(Provider, CompCode, FY);
-                foreach(var item in obj.ItemDetails)
+                foreach (var item in obj.ItemDetails)
                 {
                     var ItemCode = item.ItemCode;
 
@@ -1169,7 +1261,7 @@ namespace JSL_LITE.Controllers
         }
 
         [HttpGet]
-        public dynamic GetQuotationVchDetails(string CompCode, string FY, string Users, string StartDate, string EndDate, int TranType, int Status, int CType)
+        public dynamic GetQuotationVchDetails(string CompCode, string FY, string StartDate, string EndDate, string Users, int TranType, int VchType, int Status, int CType)
         {
             List<GetQuotationVchDT> qlist = new List<GetQuotationVchDT>();
             try
@@ -1179,19 +1271,27 @@ namespace JSL_LITE.Controllers
                 string formattedStartDate = string.IsNullOrEmpty(StartDate) ? "" : Busyhelper.FormatDate(StartDate);
                 string formattedEndDate = string.IsNullOrEmpty(EndDate) ? "" : Busyhelper.FormatDate(EndDate);
                 int QStatus = Status == 1 ? 0 : Status == 2 ? 1 : Status == 3 ? 2 : 0; string sql = string.Empty;
-                if (TranType == 1)
+                DataTable DT1 = new DataTable();
+
+                switch (TranType)
                 {
-                    sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, Convert(Varchar, A.[Date], 105) as Date, IsNull(A.[MasterCode1], 0) as AccCode, IsNull(B.[Name], '') as AccName, IsNull(B.[Mobile], '') as Mobile, IsNull(A.[TotQty], 0) as TotQty, IsNull(A.[TotAmt], 0) as TotAmt,IsNull(A.[NetAmount], 0) as NetAmt, IsNull(A.[QStatus], 0) as QStatus, (CASE WHEN A.[QStatus] = 1 Then 'Approved' WHEN A.[QStatus] = 2 Then 'Rejected' ELSE 'Pending' END) as QName, IsNull(B.[CustType], 0) as CTCode, (CASE WHEN IsNull(B.[CustType], 0) = 1 THEN 'B2B A' WHEN IsNull(B.[CustType], 0) = 2 THEN 'B2B B' WHEN IsNull(B.[CustType], 0) = 3 THEN 'B2C' END) as CTName, 0 as IsAdjustment From ESJSLTRAN1 A Left Join ESJSLCustomer B On A.MasterCode1 = B.Code Where A.[CreatedBy] = '{Users}' And A.VchType = 108";
+                    case 1:
+                        sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, Convert(Varchar, A.[Date], 105) as Date, IsNull(A.[MasterCode1], 0) as AccCode, IsNull(B.[Name], '') as AccName, IsNull(B.[Mobile], '') as Mobile, IsNull(A.[TotQty], 0) as TotQty, IsNull(A.[TotAmt], 0) as TotAmt,IsNull(A.[NetAmount], 0) as NetAmt, IsNull(A.[QStatus], 0) as QStatus, (CASE WHEN A.[QStatus] = 1 Then 'Approved' WHEN A.[QStatus] = 2 Then 'Rejected' ELSE 'Pending' END) as QName, IsNull(B.[CustType], 0) as CTCode, (CASE WHEN IsNull(B.[CustType], 0) = 1 THEN 'B2B A' WHEN IsNull(B.[CustType], 0) = 2 THEN 'B2B B' WHEN IsNull(B.[CustType], 0) = 3 THEN 'B2C' END) as CTName, 0 as IsAdjustment, 0 as VerifiedQty, IsNull(A.[BusyVchCode], 0) as BusyCode, IsNull(A.[OrderId], 0) as OrderId, IsNull(A.[OrderNo], '') as OrderNo From ESJSLTRAN1 A Left Join ESJSLCustomer B On A.MasterCode1 = B.Code Where A.[CreatedBy] = '{Users}' And A.VchType = {VchType}";
+                        if (Status != 0) sql += $" And [QStatus] = {QStatus}"; if (CType != 0) sql += $" And B.[CustType] = {CType}";
+                        break;
+                    case 2:
+                        sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, Convert(Varchar, A.[Date], 105) as Date, IsNull(A.[MasterCode1], 0) as AccCode, IsNull(B.[Name], '') as AccName, IsNull(B.[Mobile], '') as Mobile, IsNull(A.[TotQty], 0) as TotQty, IsNull(A.[TotAmt], 0) as TotAmt,IsNull(A.[NetAmount], 0) as NetAmt, (CASE WHEN A.[QStatus] = 1 And A.[Cancelled] = 1 Then 2 WHEN A.[QStatus] = 1 And A.[Cancelled] <> 1 Then A.[QStatus] END) as QStatus, (CASE WHEN A.[QStatus] = 1 And A.[Cancelled] = 1  Then 'Cancelled' WHEN A.[QStatus] = 1 THEN 'Approved' END) as QName, IsNull(B.[CustType], 0) as CTCode, (CASE WHEN IsNull(B.[CustType], 0) = 1 THEN 'B2B A' WHEN IsNull(B.[CustType], 0) = 2 THEN 'B2B B' WHEN IsNull(B.[CustType], 0) = 3 THEN 'B2C' END) as CTName, (Select Top 1 COUNT(*) From ESJSLRefTran Where VchType = A.VchType And OrderId = A.VchCode And Method = 2) as IsAdjustment,  0 as VerifiedQty, IsNull(A.[BusyVchCode], 0) as BusyCode, IsNull(A.[OrderId], 0) as OrderId, IsNull(A.[OrderNo], '') as OrderNo From ESJSLTRAN1 A Left Join ESJSLCustomer B On A.MasterCode1 = B.Code Where A.[QStatus] = 1 And A.[CreatedBy] = '{Users}' And A.VchType = {VchType}";
+                        if (CType != 0) sql += $" And B.[CustType] = {CType}";
+                        break;
+                    case 3:
+                        sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, Convert(Varchar, A.[Date], 105) as Date, IsNull(A.[MasterCode1], 0) as AccCode, IsNull(B.[Name], '') as AccName, IsNull([MasterCode2], 0) as MCCode1, IsNull(M1.[Name], '') as MCName1, IsNull([MasterCode3], 0) as MCCode2, IsNull(M2.[Name], '') as MCName2, IsNull([BusyVchCode], 0) as BusyCode, IsNull(B.[Mobile], '') as Mobile, IsNull(A.[TotQty], 0) as TotQty, IsNull(A.[TotAmt], 0) as TotAmt,IsNull(A.[NetAmount], 0) as NetAmt, IsNull(B.[CustType], 0) as CTCode, (CASE WHEN IsNull(B.[CustType], 0) = 1 THEN 'B2B A' WHEN IsNull(B.[CustType], 0) = 2 THEN 'B2B B' WHEN IsNull(B.[CustType], 0) = 3 THEN 'B2C' END) as CTName, (CASE WHEN A.Cancelled = 1 THEN 3 WHEN A.[Verification] = 0 THEN 1 WHEN A.[Verification] = 1 THEN 2 END) as [QStatus], (CASE WHEN A.Cancelled = 1 THEN 'Cancelled' WHEN A.[Verification] = 0 THEN 'Pending For Verification' WHEN A.[Verification] = 1 THEN 'Verified' END) as QName, (Select IsNull(Sum(D1), 0) From ESJSLTran2 Where VchCode = A.VchCode And VchType = A.VchType And RecType = 1) as VerifiedQty, 0 as IsAdjustment, IsNull(A.[OrderId], 0) as OrderId, IsNull(A.[OrderNo], '') as OrderNo  From ESJSLTran1 A INNER JOIN ESJSLCustomer B On A.MasterCode1 = B.Code LEFT JOIN MASTER1 M1 ON A.MasterCode2 = M1.Code LEFT JOIN MASTER1 M2 ON A.MasterCode3 = M2.Code Where A.[CreatedBy] = '{Users}' And A.VchType = {VchType}";
+                        break;
+                    default:
+                        sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, Convert(Varchar, A.[Date], 105) as Date, IsNull(A.[MasterCode1], 0) as AccCode, IsNull(B.[Name], '') as AccName, IsNull(B.[Mobile], '') as Mobile, IsNull(A.[TotQty], 0) as TotQty, IsNull(A.[TotAmt], 0) as TotAmt,IsNull(A.[NetAmount], 0) as NetAmt, IsNull(A.[QStatus], 0) as QStatus, '' as QName, IsNull(B.[CustType], 0) as CTCode, (CASE WHEN IsNull(B.[CustType], 0) = 1 THEN 'B2B A' WHEN IsNull(B.[CustType], 0) = 2 THEN 'B2B B' WHEN IsNull(B.[CustType], 0) = 3 THEN 'B2C' END) as CTName, 0 as IsAdjustment, 0 as BusyCode From ESJSLTRAN1 A Left Join ESJSLCustomer B On A.MasterCode1 = B.Code Where A.[CreatedBy] = '{Users}' And A.VchType = {VchType}";
+                        break;
                 }
-                else if (TranType == 2)
-                {
-                    sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, Convert(Varchar, A.[Date], 105) as Date, IsNull(A.[MasterCode1], 0) as AccCode, IsNull(B.[Name], '') as AccName, IsNull(B.[Mobile], '') as Mobile, IsNull(A.[TotQty], 0) as TotQty, IsNull(A.[TotAmt], 0) as TotAmt,IsNull(A.[NetAmount], 0) as NetAmt, (CASE WHEN A.[QStatus] = 1 And A.[Cancelled] = 1 Then 2 WHEN A.[QStatus] = 1 And A.[Cancelled] <> 1 Then A.[QStatus] END) as QStatus, (CASE WHEN A.[QStatus] = 1 And A.[Cancelled] = 1  Then 'Cancelled' Else 'Approved' END) as QName, IsNull(B.[CustType], 0) as CTCode, (CASE WHEN IsNull(B.[CustType], 0) = 1 THEN 'B2B A' WHEN IsNull(B.[CustType], 0) = 2 THEN 'B2B B' WHEN IsNull(B.[CustType], 0) = 3 THEN 'B2C' END) as CTName, (Select Top 1 COUNT(*) From ESJSLRefTran Where VchType = A.VchType And OrderId = A.VchCode And Method = 2) as IsAdjustment From ESJSLTRAN1 A Left Join ESJSLCustomer B On A.MasterCode1 = B.Code Where A.[CreatedBy] = '{Users}' And A.VchType = 108";
-                }
-                if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And Date >= '{formattedStartDate}' And Date <= '{formattedEndDate}'";
-                if (Status != 0) sql += $" And [QStatus] = {QStatus}";
-                if (CType != 0) sql += $" And B.[CustType] = {CType}";
-                sql += " Order By A.[VchCode] DESC, A.[Date] DESC";
-                DataTable DT1 = obj.getTable(sql);
+                if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And A.[Date] >= '{formattedStartDate}' And A.[Date] <= '{formattedEndDate}'"; sql += " Order By A.[VchCode] DESC, A.[Date] DESC";
+                DT1 = obj.getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
@@ -1206,13 +1306,17 @@ namespace JSL_LITE.Controllers
                             CustName = clsMain.MyString(item["AccName"]).Trim(),
                             CMobile = clsMain.MyString(item["Mobile"]).Trim(),
                             TQty = Convert.ToDecimal(item["TotQty"]),
+                            VQty = Convert.ToDecimal(item["VerifiedQty"]),
                             TAmt = Convert.ToDecimal(item["TotAmt"]),
                             NetAmt = Convert.ToDecimal(item["NetAmt"]),
                             QStatus = Convert.ToInt32(item["QStatus"]),
                             QName = clsMain.MyString(item["QName"]),
                             CTCode = Convert.ToInt32(item["CTCode"]),
                             CTName = clsMain.MyString(item["CTName"]),
-                            IsAdjustment = Convert.ToInt32(item["IsAdjustment"]) != 0 ? 1 : 0 
+                            BusyCode = Convert.ToInt32(item["BusyCode"]),
+                            OrderId = Convert.ToInt32(item["OrderId"]),
+                            OrderNo = clsMain.MyString(item["OrderNo"]),
+                            IsAdjustment = Convert.ToInt32(item["IsAdjustment"]) != 0 ? 1 : 0
                         });
                     }
                 }
@@ -1267,6 +1371,91 @@ namespace JSL_LITE.Controllers
                 return new { Status = -1, Msg = err.Message.ToString(), Data = ilist };
             }
             return new { Status = 1, Msg = "Success", Data = ilist };
+        }
+
+        [HttpGet]
+        public dynamic GetQuotationModificationDetails(string CompCode, string FY, int VchCode)
+        {
+            List<GetVchItemsDT> ilist = new List<GetVchItemsDT>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                SQLHELPER obj = new SQLHELPER(constr); var sno = 1;
+
+                string sql = $"Select A.[VchCode], IsNull(A.[ItemCode], 0) as ItemCode, IsNull(B.[Name], '') as ItemName, IsNull(A.[Qty], 0) as Qty, IsNull(A.[Price], 0) as Price, IsNull(A.[Amount], 0) as Amount From ESJSLTRAN2 A INNER JOIN Master1 B On A.[ItemCode] = B.[Code] And B.[MasterType] = 6 Where A.[VchCode] = {VchCode} And VchType = 108 And A.RecType = 1 Order By B.[Name]";
+                DataTable DT1 = obj.getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach (DataRow item in DT1.Rows)
+                    {
+                        var subAttri = GetSubAttributes(constr, VchCode, Convert.ToInt32(item["ItemCode"]));
+                         
+                        if (subAttri.Status == 0) throw new Exception(subAttri.Msg); 
+
+                        ilist.Add(new GetVchItemsDT
+                        {
+                            VchCode = Convert.ToInt32(item["VchCode"]),
+                            SNo = clsMain.MyInt(sno++),
+                            ItemCode = Convert.ToInt32(item["ItemCode"]),
+                            ItemName = clsMain.MyString(item["ItemName"]).Trim(),
+                            Qty = Convert.ToDecimal(item["Qty"]),
+                            Price = Convert.ToDecimal(item["Price"]),
+                            Amount = Convert.ToDecimal(item["Amount"]),
+                            Images = GetSingleImagePath(Convert.ToString("Items"), clsMain.MyString(item["ItemName"]).Trim()),
+                            Attributes = subAttri?.Data as List<GetAttributes> ?? new List<GetAttributes>()
+                        });
+                    }
+                }
+                else
+                {
+                    return new { Status = 0, Msg = "Data Not Found !!!", Data = ilist };
+                }
+            }
+            catch (Exception err)
+            {
+                return new { Status = 0, Msg = err.Message.ToString() };
+            }
+            return new { Status = 1, Msg = "Success", Data = ilist };
+        }
+
+        public dynamic GetSubAttributes(string Constr, int VchCode, int ItemCode)
+        {
+            List<GetAttributes> List = new List<GetAttributes>();
+            try
+            {
+                string sql = string.Empty;
+
+                for (int i = 1; i <= 10; i++)  // Iterate from CM1 to CM10
+                {
+                    // Concatenate each query and use the proper CM column reference
+                    sql += $"SELECT T.CM{i} AS Code, M.Name FROM ESJSLTRAN2 T INNER JOIN ESMaster1 M ON T.CM{i} = M.Code WHERE T.ItemCode = {Convert.ToInt32(ItemCode)} AND T.VchCode = {VchCode} AND T.VchType = 108 AND T.RecType = 1 AND T.CM{i} > 0";
+
+                    // Add UNION ALL between queries except for the last one
+                    if (i < 10)
+                    {
+                        sql += " UNION ALL ";
+                    }
+                }
+                DataTable DT1 = new SQLHELPER(Constr).getTable(sql);
+
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach(DataRow item in DT1.Rows)
+                    {
+                        List.Add(new GetAttributes
+                        {
+                            ATCode = Convert.ToInt32(item["Code"]),
+                            ATName = clsMain.MyString(item["Name"])
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString() };
+            }
+            return new { Status = 1, Msg = "Success", Data = List };
         }
 
         [HttpGet]
@@ -1329,7 +1518,8 @@ namespace JSL_LITE.Controllers
                     new SqlParameter("@VchCode", SqlDbType.Int) { Value = obj.VchCode },
                     new SqlParameter("@VchType", SqlDbType.Int) { Value = obj.VchType },
                     new SqlParameter("@Remarks", SqlDbType.VarChar, 255) { Value = obj.Remarks },
-                    new SqlParameter("@FollowdBy", SqlDbType.VarChar, 40) { Value = obj.FollowdBy }
+                    new SqlParameter("@FollowdBy", SqlDbType.VarChar, 40) { Value = obj.FollowdBy },
+                    new SqlParameter("@Users", SqlDbType.VarChar, 40) { Value = obj.Users }
                 };
 
                 DataTable DT1 = conobj.getTable("dbo.[sp_SaveOrderFollowUp]", parameters);
@@ -1356,7 +1546,7 @@ namespace JSL_LITE.Controllers
                 string constr = GetConnectionString(Provider, CompCode, FY); int SNo = 1;
                 SQLHELPER conobj = new SQLHELPER(constr);
 
-                string sql = $"Select ISNULL(B.[SNo], 0) as SNo,CONVERT(VARCHAR, B.[FollowdOn],105) as FDate, ISNULL(B.[Remarks], '') as Remarks From ESJSLTRAN1 A Inner Join ESJSLFOLLOWUP B ON A.VCHCODE = B.VCHCODE AND A.VCHTYPE = B.VCHTYPE WHERE A.[VCHCODE] = {VchCode} AND A.[VCHTYPE] = {VchType} ORDER BY B.[SNO] Desc";
+                string sql = $"Select ISNULL(B.[SNo], 0) as SNo, CONVERT(VARCHAR, B.[FollowdOn],105) as FDate, IsNull(B.Person, '') as FPerson, ISNULL(B.[Remarks], '') as Remarks From ESJSLTRAN1 A Inner Join ESJSLFOLLOWUP B ON A.VCHCODE = B.VCHCODE AND A.VCHTYPE = B.VCHTYPE WHERE A.[VCHCODE] = {VchCode} AND A.[VCHTYPE] = {VchType} ORDER BY B.[SNO] Desc";
                 DataTable DT1 = conobj.getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
@@ -1367,6 +1557,7 @@ namespace JSL_LITE.Controllers
                         {
                             SNo = SNo++,
                             FDate = clsMain.MyString(item["FDate"]),
+                            Person = clsMain.MyString(item["FPerson"]),
                             Remarks = clsMain.MyString(item["Remarks"])
                         });
                     }
@@ -1485,13 +1676,16 @@ namespace JSL_LITE.Controllers
         }
 
         [HttpPost]
-        public dynamic ApprovedOrRejectQuotation(Approvel obj, string CompCode, string FY)
+        public dynamic ApprovedOrRejectQuotation(PaymentDetails obj, string CompCode, string FY)
         {
             try
             {
                 string constr = GetConnectionString(Provider, CompCode, FY);
                 SQLHELPER conobj = new SQLHELPER(constr);
                 string formattedDate = DateTime.Now.ToString("yyyy-MMM-dd HH:mm:ss"); // Format the date as 'YYYY-MM-DD hh:mm:ss'
+
+                var ValidateAcc = ValidateOrCreateBusyAccount(obj, CompCode, FY);
+
 
                 string sql = $"UPDATE ESJSLTRAN1 SET [QStatus] = {obj.APCode}, [Remarks] = '{obj.Remarks}', [ApprovedBy] = '{obj.ApprovedBy}', [ApprovedOn] = '{formattedDate}' Where VchCode = {obj.VchCode} And [VchType] = 108";
                 int DT1 = conobj.ExecuteSQL(sql);
@@ -1531,59 +1725,282 @@ namespace JSL_LITE.Controllers
             return new { Status = 1, Msg = obj.APCode == 1 ? "Approved Successfully !!!" : "Rejection Successfully !!!" };
         }
 
-        [HttpGet]
-        public dynamic GetPendingOrderList(string CompCode, string FY, int MCCode, string StartDate, string EndDate)
+        private dynamic ValidateOrCreateBusyAccount(PaymentDetails Obj, string CompCode, string FY)
         {
-            List<PendingOrder> PORD = new List<PendingOrder>();
+            object Code = 0;
             try
             {
-                string constr = GetConnectionString(Provider, CompCode, FY);
-                SQLHELPER conobj = new SQLHELPER(constr);
-                string formattedStartDate = string.IsNullOrEmpty(StartDate) ? "" : Busyhelper.FormatDate(StartDate);
-                string formattedEndDate = string.IsNullOrEmpty(EndDate) ? "" : Busyhelper.FormatDate(EndDate);
+                string sql = string.Empty; DataTable DT1 = new DataTable();
+                CRParty CR_PARTY = new CRParty(); 
+                string ConStr = GetConnectionString(Provider, CompCode, FY);
 
-                //string sql = $"SELECT A.VchCode, A.RefNo, A.VchDate, A.AccCode, A.AccName, A.Mobile, ISNULL(T.TotQty, 0) AS TotQty, (ISNULL(TR.TransQty, 0) * (-1)) AS TransQty, (IsNull(T.TotQty, 0) - (IsNull(TR.TransQty, 0) * (-1))) as BQty, (CASE WHEN IsNull(T.TotQty, 0) - (IsNull(TR.TransQty, 0) * (-1)) = 0 THEN 'Completed' ELSE 'Pending' END) as [Status] FROM " +
-                //        $"(SELECT DISTINCT A.OrderId as VchCode, IsNull(A.[RefNo], '') as RefNo, CONVERT(VARCHAR, B.Date, 105) as VchDate, IsNull(B.MasterCode1, 0) as AccCode, IsNull(B.CustName, '') as AccName, IsNull(B.CMobile, '') as Mobile FROM ESJSLRefTran A Inner Join ESJSLTran1 B On A.OrderId = B.VchCode And A.VchType = B.VchType WHERE A.VchType = 108 AND A.Method = 2 And B.[QStatus] = 1 And B.Cancelled <> 1";
-                //        if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And B.[Date] >= '{formattedStartDate}' And B.[Date] <= '{formattedEndDate}' " ;
-                //        sql += ") A LEFT JOIN (SELECT A.VchCode, A.RefNo, SUM(A.TQty) AS TotQty FROM (SELECT A.VchCode, A.RefNo, A.ItemCode, SUM(A.Qty) AS TQty FROM ESJSLRefTran A INNER JOIN Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 Where A.Method = 1 AND A.VchType = 108 AND M.CM6 = {MCCode} Group By A.VchCode, A.RefNo, A.ItemCode) A Group By A.VchCode, A.RefNo) T ON A.VchCode = T.VchCode AND A.RefNo = T.RefNo LEFT JOIN (SELECT A.OrderId AS VchCode, A.RefNo, SUM(A.TRQty) AS TransQty FROM (SELECT A.OrderId, A.RefNo, A.ItemCode, SUM(A.Qty) AS TRQty FROM ESJSLRefTran A INNER JOIN  Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 Where A.Method = 2 AND A.VchType = 108 AND M.CM6 = {MCCode} Group By A.OrderId, A.RefNo, A.ItemCode) A Group By A.OrderId, A.RefNo) TR ON A.VchCode = TR.VchCode AND A.RefNo = TR.RefNo";
+                sql = $" Select * From Master1 M INNER JOIN MasterAddressInfo M1 On M.Code = M1.MasterCode Where M.MasterType = 2 And M1.Mobile = '{Obj.Mobile.Replace("'", "''")}'";
+                DT1 = new SQLHELPER(ConStr).getTable(sql);
 
-                string sql = $"WITH Totals AS (SELECT A.VchCode, A.RefNo, ISNULL(T.TotQty, 0) AS TotQty FROM (SELECT DISTINCT A.OrderId AS VchCode, ISNULL(A.[RefNo], '') AS RefNo FROM ESJSLRefTran A INNER JOIN ESJSLTran1 B ON A.OrderId = B.VchCode AND A.VchType = B.VchType WHERE A.VchType = 108 AND A.Method IN (1,2) AND B.[QStatus] = 1 AND B.Cancelled <> 1";
-                             if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And B.[Date] >= '{formattedStartDate}' And B.[Date] <= '{formattedEndDate}' ";
-                            sql += $") A INNER JOIN (SELECT A.VchCode, A.RefNo, SUM(A.TQty) AS TotQty FROM (SELECT A.VchCode, A.RefNo, A.ItemCode, SUM(A.Qty) AS TQty FROM ESJSLRefTran A INNER JOIN Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 WHERE A.Method = 1 AND A.VchType = 108 AND M.CM6 = {MCCode} GROUP BY A.VchCode, A.RefNo, A.ItemCode) A GROUP BY A.VchCode, A.RefNo) T ON A.VchCode = T.VchCode AND A.RefNo = T.RefNo), " +
-                            $"Transfers AS(SELECT A.VchCode, A.RefNo, ISNULL(TR.TransQty, 0) AS TransQty FROM(SELECT DISTINCT A.OrderId AS VchCode, ISNULL(A.[RefNo], '') AS RefNo FROM ESJSLRefTran A INNER JOIN ESJSLTran1 B ON A.OrderId = B.VchCode AND A.VchType = B.VchType WHERE A.VchType = 108 AND A.Method IN (1, 2) AND B.[QStatus] = 1 AND B.Cancelled <> 1 ";
-                            if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And B.[Date] >= '{formattedStartDate}' And B.[Date] <= '{formattedEndDate}' ";
-                            sql += $") A INNER JOIN (SELECT A.OrderId AS VchCode, A.RefNo, SUM(A.TRQty) AS TransQty FROM (SELECT A.OrderId, A.RefNo, A.ItemCode, SUM(A.Qty) AS TRQty FROM ESJSLRefTran A INNER JOIN Master1 M ON A.ItemCode = M.Code AND M.MasterType = 6 WHERE A.Method = 2 AND A.VchType = 108 AND M.CM6 = {MCCode} GROUP BY A.OrderId, A.RefNo, A.ItemCode) A GROUP BY A.OrderId, A.RefNo) TR ON A.VchCode = TR.VchCode AND A.RefNo = TR.RefNo) " +
-                            $"SELECT T.VchCode, CONVERT(VARCHAR, T1.Date, 105) as VchDate, IsNull(T.RefNo, '') as RefNo, IsNull(T1.MasterCode1, 0) as AccCode, ISNULL(T2.Name, '') as AccName, ISNULL(T2.Mobile, '') as Mobile, ISNULL(T.TotQty, 0) as TotQty, (ISNULL(Tr.TransQty, 0) * (-1)) AS TransQty, (ISNULL(T.TotQty, 0) - (ISNULL(Tr.TransQty, 0) * (-1))) AS BalQty, CASE WHEN T.TotQty = (ISNULL(Tr.TransQty, 0) * (-1)) THEN 'Completed' ELSE 'Pending' END AS VoucherStatus FROM Totals T LEFT JOIN Transfers Tr ON T.VchCode = Tr.VchCode AND T.RefNo = Tr.RefNo LEFT JOIN ESJSLTRAN1 T1 ON T.VchCode = T1.VchCode LEFT JOIN ESJSLCustomer T2 ON T1.MasterCode1 = T2.Code ORDER BY T.VchCode";
-                DataTable DT1 = conobj.getTable(sql);
-                if (DT1 != null && DT1.Rows.Count > 0)
+                if (DT1 == null || DT1.Rows.Count == 0)
                 {
-                    foreach(DataRow item in DT1.Rows)
+                    sql = $" Select * From Master1 M INNER JOIN MasterAddressInfo M1 On M.Code = M1.MasterCode Where M.MasterType = 2 And M.[Name] = '{Obj.PartyName}'";
+                    DT1 = new SQLHELPER(ConStr).getTable(sql);
+
+                    if (DT1 == null || DT1.Rows.Count == 0)
                     {
-                        PORD.Add(new PendingOrder
+                        sql = $"Select IsNull(A.[Code], 0) as Code, IsNull(A.[Name], '') as Name, IsNull(A.[Mobile], '') as Mobile, IsNull(A.[Email], '') as Email, IsNull(A.[GSTIN], '') as GSTIN, IsNull(A.[OrgName], '') as FirmName, IsNull(A.[CM1], 0) as CNCode, IsNull(B.[Name], '') as CNName, IsNull(A.[CM2], 0) as STCode, IsNull(C.[Name], '') as STName, IsNull(A.[CM3], 0) as CTCode, IsNull(D.[Name], '') as CTName, IsNull(A.[Address], '') as [Address],IsNull(A.[Deactive], 0) as Deactive From ESJSLCUSTOMER A Left Join ESJSLCountryMaster B On A.CM1 = B.Code And B.MasterType = 1 Left Join ESJSLCountryMaster C On A.CM2 = C.Code And C.MasterType = 2 Left Join ESJSLCountryMaster D On A.[CM3] = D.[Code] And D.[MasterType] = 3 Where 1=1 And A.Mobile = {Obj.Mobile} And A.Code = {Obj.PartyCode}";
+                        DT1 = new SQLHELPER(ConStr).getTable(sql);
+                        
+                        if (DT1 != null && DT1.Rows.Count > 0)
                         {
-                            VchCode = Convert.ToInt32(item["VchCode"]),
-                            VchNo = clsMain.MyString(item["RefNo"]),
-                            Date = clsMain.MyString(item["VchDate"]),
-                            AccCode = Convert.ToInt32(item["AccCode"]),
-                            AccName = clsMain.MyString(item["AccName"]),
-                            Mobile = clsMain.MyString(item["Mobile"]),
-                            TotQty = Convert.ToDecimal(item["TotQty"]),
-                            TransQty = Convert.ToDecimal(item["TransQty"]),
-                            BQty = Convert.ToDecimal(item["BalQty"]),
-                            Status = clsMain.MyString(item["VoucherStatus"])
-                        });
+                            CR_PARTY.Name = clsMain.MyString(DT1.Rows[0]["Name"]);
+                            CR_PARTY.MobileNo = clsMain.MyString(DT1.Rows[0]["Mobile"]);
+                            CR_PARTY.Email = clsMain.MyString(DT1.Rows[0]["Email"]);
+                            CR_PARTY.GSTNO = clsMain.MyString(DT1.Rows[0]["GSTIN"]);
+                            CR_PARTY.Address1 = clsMain.MyString(DT1.Rows[0]["Address"]);
+                            CR_PARTY.Address2 = clsMain.MyString(DT1.Rows[0]["CTName"]);
+                            CR_PARTY.StateCode = Convert.ToString(DT1.Rows[0]["STCode"]);
+                            CR_PARTY.StateName = clsMain.MyString(DT1.Rows[0]["STName"]);
+                            CR_PARTY.CountryName = clsMain.MyString(DT1.Rows[0]["CTName"]);
+
+                            var SaveAcc = SaveAccAuto(CR_PARTY, CompCode, FY);
+                            Code = Convert.ToInt32(SaveAcc);
+                        }
+                        else
+                        {
+                            throw new Exception("Party Details Not Found. !!!");
+                        }
+                    }
+                    else
+                    {
+                        return new { Status = 1, Msg = "This Party Is Already Exist's In Busy. !!!", Code = Convert.ToInt32(DT1.Rows[0]["Code"]) };
                     }
                 }
                 else
                 {
-                    throw new Exception("Data Not Found !!!");
+                    return new { Status = 1, Msg = "This Party Is Already Exist's In Busy. !!!", Code = Convert.ToInt32(DT1.Rows[0]["Code"]) };
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message.ToString());
+            }
+            return new { Status = 1, Msg = "Party Is Created From Busy !!!", Code = Convert.ToInt32(Code) }; ;
+        }
+
+        private dynamic SaveAccAuto(CRParty Obj, string CompCode, string FY)
+        {
+            try
+            {
+                BusyVoucher BVch = new BusyVoucher();
+                string ConnectionString = GetConnectionString(Provider, CompCode, FY);
+                CFixedInterface FI = new CFixedInterface();
+                string XMLStr = "";
+
+                XMLStr = GetAccountXML(Obj, ConnectionString);
+                bool Connect = false;
+
+                FI.CloseDB();
+
+                if (Provider == 1)
+                {
+                    Connect = FI.OpenDBForYear(BusyPath, BusyDataPath, CompCode, Convert.ToInt16(FY));
+                }
+                else
+                {
+                    Connect = FI.OpenCSDBForYear(BusyPath, ServerName, SUserName, SPassword, CompCode, Convert.ToInt16(FY));
+                }
+
+                if (Connect == true)
+                {
+                    object Err = "";
+                    int Return = FI.AddMasterFromXML(Convert.ToInt32(2), XMLStr, ref Err);   //SaveMasterFromXML(MType, XMLStr, ref Err, false, 0, ref Code);
+                    if (Return > 0)
+                    {
+                        return Return;
+                    }
+                    else
+                    {
+                        throw new Exception("Unable To Create a Customer," + Err.ToString());
+                    }
+                }
+                else
+                {
+                    throw new Exception("Unable To Connect To Company");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message.ToString()); 
+            }
+        }
+
+        public string GetAccountXML(CRParty Obj, string ConStr)
+        {
+            string XMLStr = "";
+            try
+            {
+                BusyVoucher BVch = new BusyVoucher();
+                List<BusyVoucher.Address> Acc3 = new List<BusyVoucher.Address>();
+                AccMaster AccObj = new AccMaster();
+                Accounts Acc1Obj = new Accounts();
+                Account Acc2Obj = new Account();
+                BusyVoucher.Address Acc3Obj = new BusyVoucher.Address();
+
+                Acc2Obj.Name = Obj.Name;
+                Acc2Obj.PrintName = Obj.Name;
+                Acc2Obj.ParentGroup = BVch.GetMasterCodeToName(ConStr, 116);
+                Acc2Obj.tmpParentGrpCode = 116;
+                Acc2Obj.ChequePrintName = Obj.Name;
+                Acc2Obj.BrokerAssigned = true;
+                Acc2Obj.BrokerName = "";
+                /////Address -------------------
+
+                Acc3Obj.Address1 = Obj.Address1;
+                Acc3Obj.Address2 = Obj.Address2;
+                Acc3Obj.Address3 = Obj.Address3;
+                // Acc3Obj.Address4 = Obj.OwnerName;
+                Acc3Obj.CountryName = Obj.CountryName;
+                Acc3Obj.StateName = Obj.StateName;
+                Acc3Obj.PINCode = int.Parse(Obj.StateCode);
+                Acc3Obj.Mobile = Obj.MobileNo;
+                Acc3Obj.GSTNo = Obj.GSTNO;
+                Acc3Obj.ITPAN = Obj.PAN;
+                Acc3Obj.C3 = Obj.AdharNo;
+                Acc3Obj.Contact = Obj.OwnerName;
+                Acc3Obj.Email = Obj.Email;
+                Acc3Obj.RegionName = "---Others---";
+                Acc3Obj.AreaName = "---Others---";
+                Acc2Obj.Address = Acc3Obj;
+
+                //Acc1.BillByBillBalancing = "True";
+                //Acc2.Add(Acc2Obj);
+                Acc1Obj.Account = Acc2Obj;
+                // Acc.AccDet = Acc1;
+                AccObj.Accounts = Acc1Obj;
+
+                XMLStr = CreateXML(Acc2Obj).Replace("<?xml version=\"1.0\"?>", "").Replace(" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"", "").Replace("<BillRefDT>", "").Replace("</BillRefDT>", "");
+            }
+            catch
+            {
+                return "";
+            }
+
+            return XMLStr;
+        }
+
+        private dynamic SaveOrderPayment(PaymentDetails Obj, string CompCode, string FY)
+        {
+            try
+            {
+                string ConStr = GetConnectionString(Provider, CompCode, FY);
+
+
+                AutoOrderDT AutoOrderDT = GetVoucherConfigDetails(ConStr, 2);
+
+                VchReceipt Inv = GetOrderReceiptData(AutoOrderDT, Obj);
+
+                AlertOrder AlertOrder = SaveAccInvoiceAuto(Inv, 14, CompCode, FY);
+
+                return new { Status = AlertOrder.Success, Msg = AlertOrder.Message, OrderId = AlertOrder.OrderId };
             }
             catch (Exception ex)
             {
                 return new { Status = 0, Msg = ex.Message.ToString() };
             }
-            return new { Status = 1, Msg = "Success", Data = PORD };
+        }
+
+
+
+        private VchReceipt GetOrderReceiptData(AutoOrderDT S_Obj,  PaymentDetails Obj)
+        {
+            VchReceipt Inv = new VchReceipt();
+
+            Inv.SeriesCode = Convert.ToInt32(S_Obj?.SeriesCode);
+            Inv.SeriesName = S_Obj?.SeriesName;
+            Inv.PartyName = Obj.PartyName;
+            Inv.CashAcc = S_Obj?.Name1;
+            Inv.BankAcc = S_Obj?.Name2;
+            Inv.PDC = Obj.PDCReq;
+            Inv.PDCDate = Obj.PDCDate;
+            Inv.Mode = clsMain.MyInt(Obj.PaymentType);
+            Inv.Amount = clsMain.MyDouble(Obj.Amount);
+            Inv.ChequeNo = Obj.ChequeNo;
+            Inv.ChequeDt = Obj.ChequeDate;
+            Inv.Image = clsMain.MyString(Obj.ChequeImage);
+            Inv.Remarks = Obj.Remarks;
+            Inv.BillByBill = Obj.BillByBill;
+            return Inv;
+        }
+
+        [HttpPost]
+        private dynamic SaveAccInvoiceAuto(VchReceipt Inv, int VchType, string CompCode, string FY)
+        {
+            int Status = 0; string Msg = ""; object VchCode = 0;
+            try
+            {
+                CFixedInterface FI = new CFixedInterface();
+                string XMLStr = ""; string ConStr = GetConnectionString(Provider, CompCode, FY);
+
+                XMLStr = GetReceiptVoucherXML(VchType, Inv, ConStr);
+                bool Connect = false;
+
+                FI.CloseDB();
+
+                Connect = FI.OpenCSDBForYear(BusyPath, ServerName, SUserName, SPassword, CompCode, Convert.ToInt16(FY));
+
+                if (Connect == true)
+                {
+                    object Err = "";
+                    bool Return = FI.SaveVchFromXML(VchType, XMLStr, ref Err, false, 0, ref VchCode);
+                    if (Return == true)
+                    {
+
+                        Status = 1;  Msg = "Success";
+                        UpdateInvoiceOtherDetails("", clsMain.MyInt(VchCode), VchType, Inv.SeriesCode, "", 0, 0);
+                    }
+                    else
+                    {
+                        throw new Exception(Err.ToString());
+                    }
+                }
+                else
+                {
+                    throw new Exception("Unable To Connect To The Company. !!!");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            return new { Status = Status, Msg = Msg, OrderId = clsMain.MyInt(VchCode) };
+        }
+
+        public void UpdateInvoiceOtherDetails(string ConnStr, int VchCode, int VchType, int SeriesCode, string Salesman, int AccCode, double InvAmount)
+        {
+            try
+            {
+                SQLHELPER obj = new SQLHELPER(ConnStr);
+
+                string sql = "";
+
+                if (VchType == 12)
+                {
+                    sql = "Update Tran1 Set [ApprovalStatus] = 2  Where VchCode = " + VchCode + ";Update Tran3 Set [ApprovalStatus] = 2  Where VchCode = " + VchCode + ";Update Tran2 SET [RecType] = 10 Where RecType = 3 and  VchCode = " + VchCode + ";Update Tran2 SET [RecType] = 15 Where RecType = 4 and  VchCode = " + VchCode + "";
+                }
+                else if (VchType == 9)
+                {
+                    sql = "Update Tran1 Set [ApprovalStatus] = 2  Where VchCode = " + VchCode + ";Update Tran3 Set [ApprovalStatus] = 2  Where VchCode = " + VchCode + ";Update Tran2 SET [RecType] = 10 Where RecType = 3 and  VchCode = " + VchCode + ";Update Tran2 SET [RecType] = 9 Where RecType In (2,7) and  VchCode = " + VchCode + "";
+                }
+                else if (VchType == 14)
+                {
+                    sql = "Update Tran1 Set [ApprovalStatus] = 2  Where VchCode = " + VchCode + ";Update Tran3 Set [ApprovalStatus] = 2  Where VchCode = " + VchCode + ";Update Tran2 SET [RecType] = 8 Where RecType = 1 and VchCode = " + VchCode + "";
+                }
+                int Return = obj.ExecuteSQL(sql);
+
+                sql = "Delete From Checklist Where Code = " + VchCode + " And [Type] = 2 And [Action] = 3";
+                Return = obj.ExecuteSQL(sql);
+            }
+            catch
+            {
+
+            }
         }
 
         [HttpGet]
@@ -1771,14 +2188,14 @@ namespace JSL_LITE.Controllers
             string StatusStr = string.Empty;
             string errMsg = string.Empty;
             CFixedInterface FI = new CFixedInterface();
-            SeriesConfigDt seriesDt = new SeriesConfigDt();
+         
             try
             {
                 BusyVoucher BusyVch = new BusyVoucher();
                 string constr = GetConnectionString(Provider, CompCode, Fy);
                 SQLHELPER conobj = new SQLHELPER(constr);
-                seriesDt = GetSeriesConfigDetails(constr);
-                string seriesname = seriesDt?.SeriesName; string tmcname = seriesDt?.TMCName;
+                AutoOrderDT S_DT = GetVoucherConfigDetails(constr, 1);
+                string seriesname = S_DT?.SeriesName; string tmcname = S_DT?.Name1;
                 string vchNo = GetVchNo(constr, Convert.ToInt32(109), Convert.ToInt32(2), out int autoNo);
                 //string formattedDate = DateTime.Now.ToString("dd-MM-yyyy"); // Format the date as 'YYYY-MM-DD hh:mm:ss'
                 double InvAmount = 0; string xmlstr = ""; STVchDetail NewInv = obj;
@@ -1795,7 +2212,7 @@ namespace JSL_LITE.Controllers
                 }
 
                 // Save Stock Transfer Invoice
-                if (!SaveVoucherFromXML(5, xmlstr, ref VchCode, FI, out errMsg))
+                if (!SaveVoucherFromXML(5, false, xmlstr, ref VchCode, FI, out errMsg))
                 {
                     throw new Exception(errMsg);
                 }
@@ -1816,7 +2233,8 @@ namespace JSL_LITE.Controllers
                     new SqlParameter("@AccCode", SqlDbType.Int) { Value = obj.AccCode },
                     new SqlParameter("@AccName", SqlDbType.VarChar, 100) { Value = obj.AccName },
                     new SqlParameter("@MCCode1", SqlDbType.Int) { Value = obj.MCCode },
-                    new SqlParameter("@MCCode2", SqlDbType.Int) { Value = seriesDt?.TMCCode },
+                    new SqlParameter("@MCCode2", SqlDbType.Int) { Value = S_DT?.MasterCode1 },
+                    new SqlParameter("@Series", SqlDbType.Int) { Value = S_DT?.SeriesCode },
                     new SqlParameter("@Mobile", SqlDbType.VarChar, 50) { Value = obj.Mobile },
                     new SqlParameter("@Remarks", SqlDbType.VarChar, -1) { Value = obj.Remarks},
                     new SqlParameter("@TQty", SqlDbType.Float) { Value = obj.TQty },
@@ -1940,10 +2358,10 @@ namespace JSL_LITE.Controllers
             return new { Status = 1, Msg = "Success", Data = sitem };
         }
 
-        private bool SaveVoucherFromXML(int VchType, string xmlStr, ref object VchCode, CFixedInterface fi, out string errMsg)
+        private bool SaveVoucherFromXML(int VchType, bool Modify, string xmlStr, ref object VchCode, CFixedInterface fi, out string errMsg)
         {
             object err = "";
-            bool result = fi.SaveVchFromXML(VchType, xmlStr, ref err, false, 0, ref VchCode);
+            bool result = fi.SaveVchFromXML(VchType, xmlStr, ref err, Modify, 0, ref VchCode);
             errMsg = err?.ToString();
             return errMsg == "" ? result : false;
         }
@@ -2139,6 +2557,135 @@ namespace JSL_LITE.Controllers
             return XMLStr;
         }
 
+        public string GetReceiptVoucherXML(int VchType, VchReceipt Inv, string ConStr)
+        {
+            string XMLStr = "";
+            try
+            {
+                int SrNo = 0;
+                int RefSrNo = 0;
+                BusyVoucher BVch = new BusyVoucher();
+                Receipt ORD = new Receipt();
+
+                ORD.VchSeriesName = Inv.SeriesName;
+                ORD.Date = DateTime.UtcNow.ToString("dd-MM-yyyy");
+                ORD.VchNo = "";
+                ORD.VchType = VchType;
+                ORD.StockUpdationDate = ORD.Date;
+
+                ORD.TranCurName = "Rs.";
+                ORD.tmpVchCode = 0;
+                ORD.tmpVchSeriesCode = Inv.SeriesCode;
+
+                ORD.AccEntries = new List<AccDetail>();
+
+                ORD.VchOtherInfoDetails = new VchOtherInfoDetails();
+                ORD.TranType = 0;
+
+                if (Inv.PDC == 1)
+                {
+                    ORD.TranType = 1;
+                    ORD.PDCDate = Inv.PDCDate;
+                }
+
+                ORD.VchOtherInfoDetails.Narration1 = Inv.Remarks;
+                SrNo = 0;
+
+                SrNo = SrNo + 1;
+                AccDetail ID = new AccDetail();
+                ID.SrNo = SrNo;
+                ID.AccountName = Inv.PartyName;
+                ID.AmountType = 2;
+                ID.AmtMainCur = Inv.Amount;
+                ID.CashFlow = Inv.Amount;
+                ID.ShortNar = "";
+                ID.Date = ORD.Date;
+                if (Inv.Mode == 2)
+                {
+                    ID.ShortNar = Inv.ChequeNo + "|" + Inv.ChequeDt;
+                }
+                ID.VchType = ORD.VchType;
+                //ID.BillRefs = new List<BillDetails>();
+                //RefSrNo = 0;
+                //foreach (var item in Inv.BillByBill)
+                //{
+                //    RefSrNo = RefSrNo + 1;
+                //    BillDetails billRefs = new BillDetails();
+                //    billRefs.ItemSrNo = ID.SrNo;
+                //    billRefs.SrNo = RefSrNo;
+                //    billRefs.Method = 2;
+                //    billRefs.RefNo = item.RefNo;
+                //    billRefs.Date = ORD.Date;
+                //    billRefs.DueDate = item.DueDate;
+                //    billRefs.Value1 = item.Amount;
+                //    billRefs.tmpRefCode = item.RefCode;
+                //    billRefs.tmpMasterCode1 = BVch.GetMasterNameToCode(ConStr, ID.AccountName, 2);
+                //    ID.BillRefs.Add(billRefs);
+                //}
+                ORD.AccEntries.Add(ID);
+
+                SrNo = SrNo + 1;
+                ID = new AccDetail();
+                ID.SrNo = SrNo;
+                if (Inv.Mode == 1)
+                {
+                    ID.AccountName = Inv.CashAcc;
+                }
+                if (Inv.Mode == 2)
+                {
+                    ID.AccountName = Inv.BankAcc;
+                }
+                ID.AmountType = 1;
+                ID.AmtMainCur = Inv.Amount;
+                ID.CashFlow = Inv.Amount;
+
+                ID.Date = ORD.Date;
+                ID.ShortNar = "";
+                if (Inv.Mode == 2)
+                {
+                    ID.ShortNar = Inv.ChequeNo + "|" + Inv.ChequeDt;
+                }
+                ID.VchType = ORD.VchType;
+
+                ORD.AccEntries.Add(ID);
+
+                ORD.PendingBillDetails = new List<BillDetail>();
+                if (Inv.BillByBill.Count > 0)
+                {
+                    RefSrNo = 0;
+                    BillDetail billDT = new BillDetail();
+
+                    billDT.MasterName1 = Inv.PartyName;
+                    billDT.tmpMasterCode1 = BVch.GetMasterNameToCode(1, ConStr, Inv.PartyName, 2);
+                    billDT.BillRefDT = new List<BillRefs>();
+                    foreach (var item in Inv.BillByBill)
+                    {
+                        RefSrNo = RefSrNo + 1;
+                        BillRefs billRefs = new BillRefs();
+                        billRefs.ItemSrNo = 1;
+                        billRefs.SrNo = RefSrNo;
+                        billRefs.Method = 2;
+                        billRefs.RefNo = item.RefNo;
+                        billRefs.Date = ORD.Date;
+                        billRefs.DueDate = item.DueDate;
+                        billRefs.Value1 = item.Amount;
+                        billRefs.tmpRefCode = item.RefCode;
+                        billRefs.tmpRecType = 1;
+                        billRefs.tmpMasterCode1 = billDT.tmpMasterCode1;
+                        billDT.BillRefDT.Add(billRefs);
+                    }
+                    ORD.PendingBillDetails.Add(billDT);
+                }
+                XMLStr = CreateXML(ORD).Replace("<?xml version=\"1.0\"?>", "").Replace(" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"", "").Replace("<BillRefDT>", "").Replace("</BillRefDT>", "");
+            }
+            catch
+            {
+                return "";
+            }
+
+            return XMLStr;
+        }
+
         public dynamic GetGodownVerificationVchList(string CompCode, string FY)
         {
             List<GetStockTransferQuotDt> VList = new List<GetStockTransferQuotDt>();
@@ -2147,7 +2694,7 @@ namespace JSL_LITE.Controllers
                 string constr = GetConnectionString(Provider, CompCode, FY);
                 SQLHELPER conobj = new SQLHELPER(constr);
 
-                string sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, CONVERT(VARCHAR, A.[Date], 105) as VchDate, IsNull(A.[MasterCode1], 0) as AccCode,  IsNull(B.[Name], '') as AccName, IsNull(B.[Mobile], '') as Mobile, IsNull(B.[Email], '') as Email, IsNull(B.[GSTIN], '') as GSTIN, IsNull(B.[Address], '') as Address From ESJSLTran1 A Left Join ESJSLCustomer B On A.MasterCode1 = B.Code Where ([Verification] Is Null OR [Verification] = 0) And [VchType] = 109 Order By A.[VchCode], A.[Date]"; //And [I1] = {MCCode}
+                string sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, CONVERT(VARCHAR, A.[Date], 105) as VchDate, IsNull(A.[MasterCode1], 0) as AccCode,  IsNull(B.[Name], '') as AccName, IsNull(B.[Mobile], '') as Mobile, IsNull(B.[Email], '') as Email, IsNull(B.[GSTIN], '') as GSTIN, IsNull(B.[Address], '') as Address From ESJSLTran1 A Left Join ESJSLCustomer B On A.MasterCode1 = B.Code Where ([Verification] Is Null OR [Verification] = 0) And [VchType] = 109 And A.Cancelled <> 1 Order By A.[VchCode], A.[Date]"; //And [I1] = {MCCode}
                 DataTable DT1 = conobj.getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
@@ -2189,7 +2736,7 @@ namespace JSL_LITE.Controllers
                 string constr = GetConnectionString(Provider, CompCode, FY);
                 SQLHELPER conobj = new SQLHELPER(constr);
 
-                string sql = $"Select IsNull(B.[ItemCode], 0) as ItemCode, IsNull(M.[Name], '') as ItemName, IsNull(M.[CM1], 0) as UCode, IsNull(M1.[Name], '') as UName, B.[Qty], B.[Price], B.[Amount] From ESJSLTran1 A Inner Join ESJSLTran2 B On A.VchCode = B.VchCode And A.VchType = B.VchType And B.RecType = 1 Left Join Master1 M On B.ItemCode = M.Code And M.MasterType = 6 Left Join Master1 M1 On M.CM1 = M1.Code And M1.MasterType = 8 Where (A.[Verification] Is Null Or A.[Verification] = 0) And A.[VchType] = 109 And A.[VchCode] = {VchCode}";
+                string sql = $"Select IsNull(B.[ItemCode], 0) as ItemCode, IsNull(M.[Name], '') as ItemName, IsNull(M.[CM1], 0) as UCode, IsNull(M1.[Name], '') as UName, B.[Qty], B.[Price], B.[Amount] From ESJSLTran1 A Inner Join ESJSLTran2 B On A.VchCode = B.VchCode And A.VchType = B.VchType And B.RecType = 1 Left Join Master1 M On B.ItemCode = M.Code And M.MasterType = 6 Left Join Master1 M1 On M.CM1 = M1.Code And M1.MasterType = 8 Where A.Cancelled <> 1 And (A.[Verification] Is Null Or A.[Verification] = 0) And A.[VchType] = 109 And A.[VchCode] = {VchCode}";
                 DataTable DT1 = conobj.getTable(sql);
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
@@ -2254,6 +2801,46 @@ namespace JSL_LITE.Controllers
         }
 
         [HttpGet]
+        public dynamic GetGodownVerificationDashboardVchList(string CompCode, string FY)
+        {
+            List<VerificationVchList> VList = new List<VerificationVchList>();
+            try
+            {
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                string sql = $"Select VchCode, IsNull(A.[VchNo], '') as VchNo, IsNull(A.[Date], '') as [Date], IsNull(A.[MasterCode1], 0) as AccCode, IsNull(M1.[Name], '') as AccName, IsNull(M1.[Mobile], '') as Mobile,  IsNull(M1.[Email], '') as Email, IsNull(M1.[GSTIN], '') as GSTIN, IsNull(M1.[Address], '') as Address, IsNull(M1.[Email], '') as Mobile, IsNull(A.[Verification], 0) as [Status], (CASE WHEN A.[Verification] = 1 THEN 'Verified' ELSE 'Pending For Verification' END) as SName From ESJSLTRAN1 A INNER JOIN ESJSLCustomer M1 On A.MasterCode1 = M1.Code Where VchType = 109 And Cancelled <> 1";
+                
+                DataTable DT1 = new SQLHELPER(constr).getTable(sql);
+                if (DT1 != null && DT1.Rows.Count > 0)
+                {
+                    foreach( DataRow item in DT1.Rows)
+                    {
+
+                        VList.Add(new VerificationVchList
+                        {
+                            VchCode = Convert.ToInt32(item["VchCode"]),
+                            VchNo = clsMain.MyString(item["VchNo"]),
+                            Date = clsMain.MyString(item["Date"]),
+                            AccCode = Convert.ToInt32(item["AccCode"]),
+                            AccName = clsMain.MyString(item["AccName"]),
+                            Mobile = clsMain.MyString(item["Mobile"]),
+                            Email = clsMain.MyString(item["Email"]),
+                            GSTIN = clsMain.MyString(item["GSTIN"]),
+                            Address = clsMain.MyString(item["Address"]),
+                            Status = Convert.ToInt32(item["Status"]),
+                            SName = clsMain.MyString(item["SName"]),
+                        });
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString() };
+            }
+            return new { Status = 1, Msg = "Success", Data = VList };
+        }
+
+        [HttpGet]
         public dynamic GetPendingPackingList(string CompCode, string FY)
         {
             List<PendingPackingDT> clist = new List<PendingPackingDT>();
@@ -2263,7 +2850,7 @@ namespace JSL_LITE.Controllers
                 SQLHELPER conobj = new SQLHELPER(constr);
 
                 //string sql = $"Select IsNull(A.MasterCode1, 0) As AccCode, IsNull(C.[Name], '') as AccName from ESJSLRefTran A inner Join ESJSLCustomer C On A.MasterCode1 = C.Code Inner Join ESJSLTran1 T1 On A.OrderID = T1.VchCode Where A.RecType = 1 And T1.VchType = 109 And T1.Verification = 1 Group by A.MasterCode1, C.[Name] Having Sum(A.Qty) >= 0.01";
-                string sql = $"Select IsNull(A.MasterCode1, 0) As AccCode, IsNull(C.[Name], '') as AccName, IsNull(C.Mobile, '') as Mobile, IsNull(C.Email, '') as Email, IsNull(C.GSTIN, '') as GSTIN,  IsNull(C.[Address], '') as Address, IsNull(Sum(T1.TotQty), 0) as TQty from ESJSLRefTran A inner Join ESJSLCustomer C On A.MasterCode1 = C.Code Inner Join ESJSLTran1 T1 On A.OrderID = T1.VchCode Where A.RecType = 1 And T1.VchType = 109 And T1.Verification = 1 Group by A.MasterCode1, C.[Name], C.Mobile, C.Email, C.GSTIN, C.[Address] Having Sum(A.Qty) >= 0.01";
+                string sql = $"Select IsNull(A.MasterCode1, 0) As AccCode, IsNull(C.[Name], '') as AccName, IsNull(C.Mobile, '') as Mobile, IsNull(C.Email, '') as Email, IsNull(C.GSTIN, '') as GSTIN,  IsNull(C.[Address], '') as Address, IsNull(Sum(A.Qty), 0) as TQty from ESJSLRefTran A inner Join ESJSLCustomer C On A.MasterCode1 = C.Code Inner Join ESJSLTran1 T1 On A.OrderID1 = T1.VchCode Where A.RecType = 1 And T1.VchType = 109 And T1.Verification = 1 And T1.Cancelled <> 1 Group by A.MasterCode1, C.[Name], C.Mobile, C.Email, C.GSTIN, C.[Address] Having Sum(A.Qty) >= 0.01";
                 DataTable DT1 = conobj.getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
@@ -2301,7 +2888,7 @@ namespace JSL_LITE.Controllers
             try
             {
                 string constr = GetConnectionString(Provider, CompCode, FY); int SNo = 1;
-                string sql = $"Select T1.VchCode, T1.VchNo, A.ItemCode, IsNull(M.[Name], '') as ItemName, Sum(Qty) as Qty, (Select Top 1 Price From ESJSLTran2 Where VchCode = T1.VchCode And ItemCode = A.ItemCode) as Price From ESJSLRefTran A Inner Join ESJSLTran1 T1 On A.OrderID = T1.VchCode Left Join Master1 M On A.ItemCode = M.Code And M.MasterType = 6 Where A.VchType = 109 And T1.MasterCode1 = {AccCode} Group By T1.VchCode, T1.VchNo, A.ItemCode, M.[Name] Having Sum(A.Qty) >= 0.01 Order By T1.VchCode, T1.VchNo";
+                string sql = $"Select T1.VchCode, T1.VchNo, A.ItemCode, IsNull(M.[Name], '') as ItemName, Sum(Qty) as Qty, (Select Top 1 Price From ESJSLTran2 Where VchCode = T1.VchCode And ItemCode = A.ItemCode And RecType = 1) as Price From ESJSLRefTran A Inner Join ESJSLTran1 T1 On A.OrderID1 = T1.VchCode Left Join Master1 M On A.ItemCode = M.Code And M.MasterType = 6 Where A.VchType = 109 And T1.MasterCode1 = {AccCode} And T1.Verification = 1 And T1.Cancelled <> 1 Group By T1.VchCode, T1.VchNo, A.ItemCode, M.[Name] Having Sum(A.Qty) >= 0.01 Order By T1.VchCode, T1.VchNo";
                 DataTable DT1 = new SQLHELPER(constr).getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
@@ -2332,13 +2919,13 @@ namespace JSL_LITE.Controllers
         }
 
         [HttpPost]
-        public dynamic SavePackingData(SPacking Obj, string CompCode, string FY)
+        public dynamic SavePackingData(PackingSaved Obj, string CompCode, string FY)
         {
             int Status = 0; string StatusStr = string.Empty; string BoxNumber = string.Empty;
             try
             {
                 string constr = GetConnectionString(Provider, CompCode, FY);
-                string XML = CreateXML(Obj?.BPItemDetails);
+                string XML = CreateXML(Obj?.BItemDetails);
                 string VchNo = GetVchNo(constr, Convert.ToInt32(103), Convert.ToInt32(3), out int AutoNo);
 
                 SqlParameter[] parameter = new SqlParameter[]
@@ -2347,13 +2934,13 @@ namespace JSL_LITE.Controllers
                     new SqlParameter("@VchNo", SqlDbType.VarChar, 40) { Value = VchNo },
                     new SqlParameter("@VchType", SqlDbType.Int) {  Value = 110},
                     new SqlParameter("@AutoVchNo", SqlDbType.Int) { Value = AutoNo },
-                    new SqlParameter("@AccCode", SqlDbType.Int) { Value = Obj.AccCode },
-                    new SqlParameter("@AccName", SqlDbType.VarChar, 100) { Value = Obj.AccName },
+                    new SqlParameter("@MasterCode1", SqlDbType.Int) { Value = Obj.AccCode },
                     new SqlParameter("@Mobile", SqlDbType.VarChar, 20) { Value = Obj.Mobile},
                     new SqlParameter("@TQty", SqlDbType.Float) { Value = Obj.TotQty },
                     new SqlParameter("@TAmt", SqlDbType.Float) { Value = Obj.TotAmt },
                     new SqlParameter("@NetAmt", SqlDbType.Float) { Value = Obj.NetAmt },
-                    new SqlParameter("@Users", SqlDbType.VarChar, 50) { Value = Obj.Users }
+                    new SqlParameter("@Users", SqlDbType.VarChar, 50) { Value = Obj.Users },
+                    new SqlParameter("@ItemDetails", SqlDbType.NVarChar, -1) { Value = XML }
                 };
 
                 DataTable DT1 = new SQLHELPER(constr).getTable("[sp_SaveBoxPacking]", parameter);
@@ -2369,7 +2956,7 @@ namespace JSL_LITE.Controllers
             {
                 return new { Status = 0, Msg = ex.Message.ToString() };
             }
-            return new { Status = Status, Msg = StatusStr, Data = BoxNumber };
+            return new { Status = Status, Msg = StatusStr, BoxNumber = BoxNumber };
         }
 
         [HttpPost]
@@ -2408,9 +2995,9 @@ namespace JSL_LITE.Controllers
                     int r = new SQLHELPER(constr).ExecuteSQL(sql);
                     if (r > 0)
                     {
-                        var cList = GetCustomerDetails(obj?.Mobile, CompCode, FY);
-                        var cDetails = cList?.Data as List<GetCustomerDT> ?? new List<GetCustomerDT>();
-                        return new { Status = 1, Msg = Code == 0 ? "Customer Successfully Created !!!" : "Customer Successfully Modified !!!", Data = cDetails };
+                        var CustList = GetCustomerDetails(obj?.Mobile, CompCode, FY);
+                        var CustDet = CustList?.Data as List<GetCustomerDT> ?? new List<GetCustomerDT>();
+                        return new { Status = 1, Msg = Code == 0 ? "Customer Successfully Created !!!" : "Customer Successfully Modified !!!", Data = CustDet };
                     }
                     else
                     {
@@ -2425,7 +3012,7 @@ namespace JSL_LITE.Controllers
         }
 
         [HttpGet]
-        public dynamic GetCustomerDetails(string Mobile, string CompCode, string FY)
+        public dynamic GetCustomerDetails(string CompCode, string FY, string Mobile)
         {
             List<GetCustomerDT> CList = new List<GetCustomerDT>();
             try
@@ -2452,6 +3039,7 @@ namespace JSL_LITE.Controllers
                             Code = Convert.ToInt32(item["Code"]),
                             Name = item["Name"].ToString().Trim(),
                             Mobile = item["Mobile"].ToString().Trim(),
+                            GstType = 1,
                         });
                     }
                 }
@@ -2468,14 +3056,16 @@ namespace JSL_LITE.Controllers
         }
 
         [HttpGet]
-        public dynamic GetCustomerDetailsList(string CompCode, string FY, int CType)
+        public dynamic GetCustomerDetailsList(string CompCode, string FY, int Code, int CType)
         {
             List<Customers> CList = new List<Customers>();
             try
             {
                 string constr = GetConnectionString(Provider, CompCode, FY);
                 string sql = $"Select IsNull(A.[Code], 0) as Code, IsNull(A.[Name], '') as Name, IsNull(A.[Mobile], '') as Mobile, IsNull(A.[Email], '') as Email, IsNull(A.[GSTIN], '') as GSTIN, IsNull(A.[OrgName], '') as FirmName, IsNull(A.[CM1], 0) as CNCode, IsNull(B.[Name], '') as CNName, IsNull(A.[CM2], 0) as STCode, IsNull(C.[Name], '') as STName, IsNull(A.[CM3], 0) as CTCode, IsNull(D.[Name], '') as CTName, IsNull(A.[Address], '') as [Address], IsNull(A.[CustType], 0) as CCode, (CASE WHEN IsNull(A.[CustType], 0) = 1 THEN 'B2B A' WHEN IsNull(A.[CustType], 0) = 2 THEN 'B2B B' WHEN IsNull(A.[CustType], 0) = 3 THEN 'B2C' END) as CName, IsNull(A.[Deactive], 0) as Deactive From ESJSLCUSTOMER A Left Join ESJSLCountryMaster B On A.CM1 = B.Code And B.MasterType = 1 Left Join ESJSLCountryMaster C On A.CM2 = C.Code And C.MasterType = 2 Left Join ESJSLCountryMaster D On A.[CM3] = D.[Code] And D.[MasterType] = 3 Where 1=1";
-                if (CType != 0) sql += $" And A.[CustType] = {CType} "; sql += "Order By A.[Name]";
+                if (CType != 0) sql += $" And A.[CustType] = {CType} "; 
+                if (Code != 0) sql += $" And A.[Code] = {Code} ";
+                sql += "Order By A.[Name]";
                 DataTable DT1 = new SQLHELPER(constr).getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
@@ -2543,18 +3133,20 @@ namespace JSL_LITE.Controllers
         [HttpPost]
         public dynamic VoucherCancellation(dynamic obj, string CompCode, string FY, int TranType, int VchType, int VchCode)
         {
+            int Status = 0; string StatusStr = string.Empty;
             try
             {
                 string constr = GetConnectionString(Provider, CompCode, FY); string sql = string.Empty;
+                int BusyVchCode = 0; int Cancelled = 0; int Verification = 0;
                 DataTable DT1 = new DataTable(); int DT2 = 0;
                 switch (TranType)
                 {
                     case 1:
-
+                        // Fully Order Cancellection
                         sql = $"Select Top 1 * From ESJSLRefTran Where VchType = {VchType} And OrderId = {VchCode} And Method = 2";
                         DT1 = new SQLHELPER(constr).getTable(sql);
 
-                        if (DT1 != null && DT1.Rows.Count > 0) 
+                        if (DT1 != null && DT1.Rows.Count > 0)
                         {
                             throw new Exception("This voucher cannot be fully canceled as it has already been adjusted. Please check the voucher status. !!!");
                         }
@@ -2565,16 +3157,17 @@ namespace JSL_LITE.Controllers
 
                             if (DT2 == 1)
                             {
-                                return new { Status = 1, Msg = "Order Is Successfully Cancelled !!!" };
+                                Status = 1; StatusStr = "Order Is Successfully Cancelled !!!";
                             }
                             else
                             {
                                 throw new Exception("An error occurred while canceled voucher. Please try again later !!!");
                             }
                         }
+                        break;
 
                     case 2:
-
+                        // Particial Order cancellection
                         string formattedDate = DateTime.Now.ToString("dd-MMM-yyyy");
                         JObject filterObject = JObject.FromObject(obj);
                         var CancelItems = filterObject["CancelItems"]?.ToObject<List<JObject>>();
@@ -2592,11 +3185,76 @@ namespace JSL_LITE.Controllers
                             sql = $"INSERT INTO ESJSLREFTRAN ([VchCode], [VchType], [RecType], [Method], [RefNo], [Date], [MasterCode1], [ItemCode], [Qty], [Price], [Amount], [OrderId]) VALUES (0, {VchType}, 2, 2, '{OrderNo}', '{formattedDate}', {AccCode}, {ItemCode}, {(Qty * (-1))}, {Price}, {Amount}, {OrderId})";
                             DT2 = new SQLHELPER(constr).ExecuteSQL(sql);
 
-                            if (DT2 == 0) throw new Exception("An error occurred while canceled voucher. Please try again later !!!");
+                            if (DT2 == 0) 
+                            {
+                                throw new Exception("An error occurred while canceled voucher. Please try again later !!!");
+                            }
+                            else
+                            {
+                                Status = 1; StatusStr = "Order Is Successfully Cancelled !!!";
+                            }
                         }
 
                         break;
                     case 3:
+                        // Stock Tranfer/Godown Trander Cancel Fully
+                        JObject CancelVchObj = JObject.FromObject(obj);
+                        var OrderId_1 = Convert.ToInt32(CancelVchObj["OrderId"]?.ToObject<int>() ?? 0);
+                        var OrderNo_1 = CancelVchObj["OrderNo"]?.ToObject<string>() ?? "";
+                        var Order_VchType_1 = Convert.ToInt32(CancelVchObj["OrderVchType"]?.ToObject<int>());
+                        dynamic Invobj = new ExpandoObject();
+
+                        //sql = $"Select * From ESJSLTran1 Where VchCode = {VchCode} And VchType = {VchType} And Cancelled <> 1 And ((VchType = 109 AND Verification <> 1) OR (VchType <> 109)) ";
+                        sql = $"Select  IsNull(A.Cancelled, 0) as Cancelled, IsNull(A.Verification, 0) as Verification, IsNull(A.VchCode, 0) as VchCode, IsNull(A.VchNo, '') as VchNo, CONVERT(VARCHAR, A.[Date], 105) as VchDate, IsNull(A.BusyVchCode, 0) as BusyVchCode, IsNull(B.[VchType], 0) as BusyVchType, LTRIM(IsNull(B.VchNo, '')) as BusyVchNo, CONVERT(VARCHAR, B.[Date], 105) as BusyVchDate, IsNull(A.MasterCode1, 0) as AccCode, IsNull(M.[Name], 0) as AccName, IsNull(A.MasterCode2, 0) as MCCode1, IsNull(M1.[Name], '') as MCName1, IsNull(A.MasterCode3, 0) as MCCode2, IsNull(M2.[Name], '') as MCName2, IsNull(A.MasterCode4, 0) as SeriesCode, IsNull(SUBSTRING(M3.[Name], 3, 25), '') as SeriesName From ESJSLTran1 A LEFT JOIN Tran1 B On A.BusyVchCode = B.VchCode LEFT JOIN ESJSLCustomer M ON A.MasterCode1 = M.Code LEFT JOIN MASTER1 M1 ON A.MasterCode2 = M1.Code LEFT JOIN MASTER1 M2 ON A.MasterCode3 = M2.Code LEFT JOIN MASTER1 M3 ON A.MasterCode4 = M3.Code Where A.VchCode = {VchCode} And A.VchType = {VchType}";
+                        DT1 = new SQLHELPER(constr).getTable(sql);
+
+                        if (DT1 != null && DT1.Rows.Count > 0)
+                        {
+                            Cancelled = Convert.ToInt32(DT1.Rows[0]["Cancelled"]);
+                            Verification = Convert.ToInt32(DT1.Rows[0]["Verification"]);
+                            BusyVchCode = Convert.ToInt32(DT1.Rows[0]["BusyVchCode"]);
+
+                            Invobj.MCName1 = clsMain.MyString(DT1.Rows[0]["MCName1"]);
+                            Invobj.MCName2 = clsMain.MyString(DT1.Rows[0]["MCName2"]);
+                            Invobj.SeriesCode = Convert.ToInt32(DT1.Rows[0]["SeriesCode"]);
+                            Invobj.SeriesName = clsMain.MyString(DT1.Rows[0]["SeriesName"]);
+                            Invobj.VchDate = clsMain.MyString(DT1.Rows[0]["BusyVchDate"]);
+                            Invobj.VchNo = clsMain.MyString(DT1.Rows[0]["BusyVchNo"]);
+                            Invobj.VchType = Convert.ToInt32(DT1.Rows[0]["BusyVchType"]);
+                            Invobj.ItemDetails = new JArray();
+                        }
+
+                        if (Verification == 1) throw new Exception("This voucher cannot canceled as it has already been verified. Please check the voucher status. !!!");
+                        if (Cancelled == 1) throw new Exception("This voucher cannot canceled as it has already been canceled. Please check the voucher status. !!!");
+
+                        if (BusyVchCode != 0)
+                        {
+                            var VoucherCancel = BusyVoucherCancellation(Invobj, CompCode, FY, BusyVchCode);
+
+                            // Check if the status is 0 (error case)
+                            if (VoucherCancel.Status == 0)
+                            {
+                                throw new Exception("Error in Voucher Cancellation:" + VoucherCancel.Msg);
+                            }
+                        } 
+
+                        sql = $"Delete From ESJSLRefTran Where VchType = {Order_VchType_1} And VchCode = {VchCode} And OrderId = {OrderId_1}";
+                        DT2 = new SQLHELPER(constr).ExecuteSQL(sql);
+
+                        if (DT2 == 1)
+                        {
+                            sql = $"Update ESJSLTran1 Set Cancelled = 1 Where VchCode = {VchCode} And Vchtype = {VchType}";
+                            DT2 = new SQLHELPER(constr).ExecuteSQL(sql);
+
+                            if (DT2 == 0)
+                            {
+                                throw new Exception("An error occurred while canceled voucher. Please try again later !!!");
+                            }
+                            else
+                            {
+                                Status = 1; StatusStr = "Stock Transfer Is Successfully Cancelled !!!";
+                            }
+                        }
                         break;
                 }
             }
@@ -2604,7 +3262,105 @@ namespace JSL_LITE.Controllers
             {
                 return new { Status = 0, Msg = ex.Message.ToString() };
             }
-            return new { Status = 1, Msg = "Order Is Successfully Cancelled !!!" };
+            return new { Status = Status, Msg = StatusStr.ToString() };
+        }
+
+        private dynamic BusyVoucherCancellation(dynamic obj, string CompCode, string FY, int BusyCode)
+        {
+            try
+            {
+                object VchCode = BusyCode;
+                string constr = GetConnectionString(Provider, CompCode, FY);
+                string StatusStr = string.Empty; string errMsg = string.Empty;
+                CFixedInterface FI = new CFixedInterface();
+                BusyVoucher BusyVch = new BusyVoucher();
+                double InvAmount = 0; dynamic NewInv = obj;
+
+                // Generate Stock Tranfer Cancellection XML
+                string xmlstr = GetBusyCancellectionXML(NewInv, BusyCode, ref InvAmount, constr);
+
+                bool Connect = false; FI.CloseDB();
+                Connect = FI.OpenCSDBForYear(BusyPath, ServerName, SUserName, SPassword, CompCode, Convert.ToInt16(FY));
+
+                if (!Connect)
+                {
+                    throw new Exception("Unable To Connect To Company");
+                }
+
+                // Save Stock Transfer Invoice
+                if (!SaveVoucherFromXML(5, true, xmlstr, ref VchCode, FI, out errMsg))
+                {
+                    throw new Exception(errMsg);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { Status = 0, Msg = ex.Message.ToString() };
+            }
+            return new { Status = 1, Msg = "Success" };
+        }
+
+        public string GetBusyCancellectionXML(dynamic Inv, int BusyCode, ref double InvAmount, string Connectionstr)
+        {
+            string XMLStr = string.Empty;
+            try
+            {
+                BusyVoucher BVch = new BusyVoucher();
+                BusyVoucher.StockTransfer ORD = new BusyVoucher.StockTransfer();
+                ORD.VchSeriesName = Inv.SeriesName;
+                ORD.Date = Inv.VchDate.ToString();
+                ORD.VchNo = Inv.VchNo.ToString();
+                ORD.VchType = Inv.VchType;
+                ORD.StockUpdationDate = ORD.Date;
+                ORD.MasterName1 = Inv.MCName1.ToString();
+                ORD.MasterName2 = Inv.MCName2.ToString();
+                ORD.TranCurName = "";
+                ORD.Cancelled = true;
+                ORD.InputType = 1;
+                ORD.TmpVchCode = BusyCode;
+                ORD.TmpVchSeriesCode = Inv.SeriesCode;
+                ORD.ItemEntries = new List<BusyVoucher.ItemDetail>();
+                //ORD.BillSundries = new List<BusyVoucher.BSDetail>();
+                //ORD.VchOtherInfoDetails = new BusyVoucher.VchOtherInfoDetails();
+                //ORD.VchOtherInfoDetails.Narration1 = clsMain.MyString(Inv.Remarks);
+                //ORD.VchOtherInfoDetails.Transport = clsMain.MyString(Inv.Transport);
+                //ORD.VchOtherInfoDetails.Station = clsMain.MyString(Inv.Station);
+
+                int SrNo = 0;
+                foreach (var item in Inv.ItemDetails)
+                {
+                    BusyVoucher.ItemDetail ID = new BusyVoucher.ItemDetail();
+                    SrNo = SrNo + 1;
+                    ID.SrNo = SrNo;
+                    ID.VchType = ORD.VchType;
+                    ID.Date = ORD.Date;
+                    ID.VchNo = Inv.VchNo.ToString();
+                    ID.ItemName = item.ItemName.ToString();
+                    ID.UnitName = item.UName.ToString();
+                    ID.ConFactor = 1;
+                    ID.Qty = clsMain.MyDouble(item.Qty);
+                    ID.QtyMainUnit = clsMain.MyDouble(ID.Qty);
+                    ID.QtyAltUnit = 0;
+                    ID.ConFactor = 0;
+                    ID.ListPrice = 0;
+                    ID.Price = (double)item.Price;
+                    ID.Amt = clsMain.MyDouble(ID.Price * ID.Qty);
+                    ID.PriceAltUnit = 0;
+                    if (ID.QtyAltUnit != 0) { ID.PriceAltUnit = clsMain.MyDouble((clsMain.MyDouble(ID.Amt) / clsMain.MyDouble(ID.QtyAltUnit)).ToString("0.00")); }
+                    InvAmount = InvAmount + clsMain.MyDouble(ID.Amt);
+                    ID.TmpVchCode = 0;
+                    ID.MC = ORD.MasterName2;
+                    ID.ItemDescInfo = new BusyVoucher.ItemDescInfo();
+                    ORD.ItemEntries.Add(ID);
+                }
+                //ORD.TmpTotalAmt = InvAmount;
+                XMLStr = CreateXML(ORD).Replace("<?xml version=\"1.0\"?>", "").Replace(" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"", "");
+            }
+            catch
+            {
+                return "";
+            }
+            return XMLStr;
         }
 
         [HttpGet]
@@ -2618,11 +3374,16 @@ namespace JSL_LITE.Controllers
                 string formattedStartDate = string.IsNullOrEmpty(startDate) ? "" : Busyhelper.FormatDate(startDate);
                 string formattedEndDate = string.IsNullOrEmpty(endDate) ? "" : Busyhelper.FormatDate(endDate);
 
-                string sql = $"Select A.AccCode, ISNULL(B.[Name], '') As AccName, ISNULL(B.[Mobile], '') as Mobile, IsNull(B.[Email], '') as Email, IsNull(B.[OrgName], '') as FirmName, IsNull(B.[Address], '') as [Address], IsNull(B.[CustType], 0) as CTCode, IsNull(B.[Deactive], 0) as Deactive, (CASE WHEN [CustType] = 1 THEN 'B2B A' WHEN [CustType] = 2 THEN 'B2B B' WHEN  [CustType] = 3 THEN 'B2C' ELSE '' END) as CTName From (";
-                sql += $"Select IsNull(A.[MasterCode1], 0) as AccCode From ESJSLTRAN1 A Inner Join ESUserMapping B On A.CreatedBy = B.[User] Where B.UType in (1,2) And B.[User] = '{Users.Replace("'", "''").Trim()}' And VchType = {VchType} ";
-                if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And A.[Date] >= '{formattedStartDate}' And A.[Date] <= '{formattedEndDate}' ";
-                sql += "Group By A.[MasterCode1]) A Inner Join ESJSLCustomer B On A.AccCode = B.Code ";
-                if (CType != 0) sql += $"And B.[CustType] = {CType} "; sql+= "Order By A.[AccName]";
+                //string sql = $"Select A.AccCode, ISNULL(B.[Name], '') As AccName, ISNULL(B.[Mobile], '') as Mobile, IsNull(B.[Email], '') as Email, IsNull(B.[OrgName], '') as FirmName, IsNull(B.[Address], '') as [Address], IsNull(B.[CustType], 0) as CTCode, IsNull(B.[Deactive], 0) as Deactive, (CASE WHEN [CustType] = 1 THEN 'B2B A' WHEN [CustType] = 2 THEN 'B2B B' WHEN  [CustType] = 3 THEN 'B2C' ELSE '' END) as CTName From (";
+                //sql += $"Select IsNull(A.[MasterCode1], 0) as AccCode From ESJSLTRAN1 A Inner Join ESUserMapping B On A.CreatedBy = B.[User] Where B.UType in (1,2) And B.[User] = '{Users.Replace("'", "''").Trim()}' And VchType = {VchType} ";
+                //if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And A.[Date] >= '{formattedStartDate}' And A.[Date] <= '{formattedEndDate}' ";
+                //sql += "Group By A.[MasterCode1]) A Inner Join ESJSLCustomer B On A.AccCode = B.Code ";
+                //if (CType != 0) sql += $"And B.[CustType] = {CType} "; sql+= "Order By B.[Name]";
+
+                string sql = $"Select A.Code as AccCode, ISNULL(A.[Name], '') As AccName, ISNULL(A.[Mobile], '') as Mobile, IsNull(A.[Email], '') as Email, IsNull(A.[OrgName], '') as FirmName, IsNull(A.[Address], '') as [Address], IsNull(A.[CustType], 0) as CTCode, IsNull(A.[Deactive], 0) as Deactive, (CASE WHEN A.[CustType] = 1 THEN 'B2B A' WHEN A.[CustType] = 2 THEN 'B2B B' WHEN  A.[CustType] = 3 THEN 'B2C' ELSE '' END) as CTName From ESJSLCustomer A LEFT JOIN ESJSLTRAN1 B ON A.Code = B.MasterCode1 And B.VchType = {VchType} Where A.CreatedBy = '{Users.Replace("'", "''").Trim()}'";
+                if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And B.[Date] >= '{formattedStartDate}' And B.[Date] <= '{formattedEndDate}' ";
+                if (CType != 0) sql += $"And A.[CustType] = {CType} ";
+                sql += "Order By A.[Name]";
 
                 DataTable DT1 = conobj.getTable(sql);
 
@@ -2671,7 +3432,7 @@ namespace JSL_LITE.Controllers
                 // Fetch Salesman Order Amount using the new function
                 dlist = GetSalesmanOrderAmount(constr, Users, AccCode, VchType, formattedStartDate, formattedEndDate);
 
-                string sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, Convert(Varchar, A.[Date], 105) as Date, IsNull(A.[MasterCode1], 0) as AccCode, IsNull(A.[CustName], '') as AccName, IsNull(A.[CMobile], '') as Mobile,IsNull(A.[TotQty], 0) as TotQty,IsNull(A.[TotAmt], 0) as TotAmt,IsNull(A.[NetAmount], 0) as NetAmt,IsNull(A.[QStatus], 0) as QStatus,(CASE WHEN A.[QStatus] = 1 Then 'Approved' WHEN A.[QStatus] = 2 Then 'Rejected' ELSE 'Pending' END) as QName, IsNull(C.[CustType], 0) as CTCode, (CASE WHEN C.[CustType] = 1 THEN 'B2B A' WHEN C.[CustType] = 2 THEN 'B2B B' WHEN C.[CustType] = 3 THEN 'B2C' ELSE '' END) as CTName, IsNull(A.[Remarks], '') as Remarks From ESJSLTRAN1 A Inner Join ESUserMapping B On A.CreatedBy = B.[User] Inner Join ESJSLCustomer C On A.MasterCode1 = C.Code Where B.UType in (1,2) And B.[User] = '{Users.Replace("'", "''").Trim()}' And A.[MasterCode1] = {AccCode} And A.[VchType] = {VchType}";
+                string sql = $"Select A.[VchCode], IsNull(A.[VchNo], '') as VchNo, Convert(Varchar, A.[Date], 105) as Date, IsNull(A.[MasterCode1], 0) as AccCode, IsNull(C.[Name], '') as AccName, IsNull(C.[Mobile], '') as Mobile,IsNull(A.[TotQty], 0) as TotQty,IsNull(A.[TotAmt], 0) as TotAmt,IsNull(A.[NetAmount], 0) as NetAmt,IsNull(A.[QStatus], 0) as QStatus,(CASE WHEN A.[QStatus] = 1 Then 'Approved' WHEN A.[QStatus] = 2 Then 'Rejected' ELSE 'Pending' END) as QName, IsNull(C.[CustType], 0) as CTCode, (CASE WHEN C.[CustType] = 1 THEN 'B2B A' WHEN C.[CustType] = 2 THEN 'B2B B' WHEN C.[CustType] = 3 THEN 'B2C' ELSE '' END) as CTName, IsNull(A.[Remarks], '') as Remarks From ESJSLTRAN1 A Inner Join ESUserMapping B On A.CreatedBy = B.[User] Inner Join ESJSLCustomer C On A.MasterCode1 = C.Code Where B.UType in (1,2) And B.[User] = '{Users.Replace("'", "''").Trim()}' And A.[MasterCode1] = {AccCode} And A.[VchType] = {VchType}";
                 if (!string.IsNullOrEmpty(formattedStartDate) && !string.IsNullOrEmpty(formattedEndDate)) sql += $" And Date >= '{formattedStartDate}' And Date <= '{formattedEndDate}'";
                 sql += "ORDER BY A.[VchCode] DESC, [Date] DESC";
                 DataTable DT1 = conobj.getTable(sql);
@@ -19072,7 +19833,7 @@ namespace JSL_LITE.Controllers
                     if (ID.QtyAltUnit != 0) { ID.PriceAltUnit = clsMain.MyDouble((clsMain.MyDouble(ID.Amt) / clsMain.MyDouble(ID.QtyAltUnit)).ToString("0.00")); }
                     if (item.SchemeCode > 0)
                     {
-                        ID.SchemeName = BVch.GetMasterCodeToName(Provider, ConnectionString, item.SchemeCode);
+                        ID.SchemeName = BVch.GetMasterCodeToName(ConnectionString, item.SchemeCode);
                         ID.SchemeType = item.SchemeType;
                         ID.SchemeParentRowNo = 0;
                     }
@@ -19148,7 +19909,7 @@ namespace JSL_LITE.Controllers
                         ID.VchType = ORD.VchType;
                         ID.Date = ORD.Date;
                         ID.VchNo = ORD.VchNo;
-                        ID.ItemName = BVch.GetMasterCodeToName(Provider, ConnectionString, item.FItemCode);
+                        ID.ItemName = BVch.GetMasterCodeToName(ConnectionString, item.FItemCode);
 
                         ID.ConFactor = 1;
                         //if (item.BillingUnit == 1)
@@ -19192,7 +19953,7 @@ namespace JSL_LITE.Controllers
                         if (ID.QtyAltUnit != 0) { ID.PriceAltUnit = clsMain.MyDouble((clsMain.MyDouble(ID.Amt) / clsMain.MyDouble(ID.QtyAltUnit)).ToString("0.00")); }
                         if (item.SchemeCode != 0)
                         {
-                            ID.SchemeName = BVch.GetMasterCodeToName(Provider, ConnectionString, item.SchemeCode);
+                            ID.SchemeName = BVch.GetMasterCodeToName(ConnectionString, item.SchemeCode);
                             ID.SchemeType = item.SchemeType;
                             ID.SchemeParentRowNo = SN;
                         }
@@ -19349,21 +20110,24 @@ namespace JSL_LITE.Controllers
             }
         }
 
-        private SeriesConfigDt GetSeriesConfigDetails(string constr)
+        private AutoOrderDT GetVoucherConfigDetails(string constr, int TranType)
         {
-            SeriesConfigDt seriesDt = new SeriesConfigDt();
+            AutoOrderDT S_DT = new AutoOrderDT();
             try
             {
-                SQLHELPER obj = new SQLHELPER(constr);
-                string sql = $"Select Top 1 ISNULL(A.[MasterCode1], 0) as SeriesCode, IsNull(SUBSTRING(B.[Name], 3, 25), '') as SeriesName, ISNULL(A.[MasterCode2], 0) as TMCCode,  ISNULL(C.[Name], '') as TMCName From ESJSLSeriesConfig A Left Join Master1 B ON A.MasterCode1 = B.Code Left Join Master1 C ON A.MasterCode2 = C.Code Where A.RecType = 1";
-                DataTable DT1 = obj.getTable(sql);
+                string sql = string.Empty;
+
+                sql = $"Select Top 1 ISNULL(A.[MasterCode1], 0) as SeriesCode, IsNull(SUBSTRING(B.[Name], 3, 25), '') as SeriesName, ISNULL(A.[MasterCode2], 0) as [MasterCode1],  ISNULL(M1.[Name], '') as Name1, ISNULL(A.[MasterCode3], 0) as MasterCode2, ISNULL(M2.[Name], '') as Name2 From ESJSLSeriesConfig A Left Join Master1 B ON A.MasterCode1 = B.Code Left Join Master1 M1 ON A.MasterCode2 = M1.Code Left Join Master1 M2 ON A.MasterCode3 = M2.Code Where A.RecType = {TranType}";
+                DataTable DT1 = new SQLHELPER(constr).getTable(sql);
 
                 if (DT1 != null && DT1.Rows.Count > 0)
                 {
-                    seriesDt.SeriesCode = Convert.ToInt32(DT1.Rows[0]["SeriesCode"]);
-                    seriesDt.SeriesName = clsMain.MyString(DT1.Rows[0]["SeriesName"]).Trim();
-                    seriesDt.TMCCode = Convert.ToInt32(DT1.Rows[0]["TMCCode"]);
-                    seriesDt.TMCName = clsMain.MyString(DT1.Rows[0]["TMCName"]).Trim();
+                    S_DT.SeriesCode = Convert.ToInt32(DT1.Rows[0]["SeriesCode"]);
+                    S_DT.SeriesName = clsMain.MyString(DT1.Rows[0]["SeriesName"]);
+                    S_DT.MasterCode1 = Convert.ToInt32(DT1.Rows[0]["MasterCode1"]);
+                    S_DT.Name1 = clsMain.MyString(DT1.Rows[0]["Name1"]).Trim();
+                    S_DT.MasterCode2 = Convert.ToInt32(DT1.Rows[0]["MasterCode2"]);
+                    S_DT.Name2 = clsMain.MyString(DT1.Rows[0]["Name2"]).Trim();
                 }
                 else
                 {
@@ -19374,7 +20138,7 @@ namespace JSL_LITE.Controllers
             {
                 throw new Exception("Error fetching Configuration Series Details" + ex.Message.ToString());
             }
-            return seriesDt;
+            return S_DT;
         }
 
         private string GetConfigeOptionalField(string constr, int RecType)
