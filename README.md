@@ -1,4 +1,4 @@
-# Project Name
+# JSL LIGHT
 
 A brief description of what the API does and its primary use case.
 
