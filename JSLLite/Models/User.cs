@@ -221,18 +221,23 @@ namespace JSLLite.Models
 
     public class TransactionData
     {
+        public int VchCode { get; set; }
         public int CustId { get; set; }
         public string CustName { get; set; }
         public string CMobile { get; set; }
         public double TQty { get; set; }
         public double TAmt { get; set; }
+        public double Discount { get; set; }
+        public double TaxType { get; set; }
+        public double TaxAmt1 { get; set; }
+        public double TaxAmt2 { get; set; }
         public double NetAmt { get; set; }
         public string Users { get; set; }
 
         [XmlArray("ItemDetail")]
         [XmlArrayItem("ItemDetail")]
         public List<ItemDetail> ItemDetails { get; set; }
-        public List<BSDetail> BSDetails { get; set; }
+        //public List<BSDetail> BSDetails { get; set; }
     }
 
     public class ItemDetail
@@ -241,9 +246,11 @@ namespace JSLLite.Models
         public int ItemCode { get; set; }
         public double Qty { get; set; }
         public double Price { get; set; }
-        public double MRP { get; set; }
-        public double Discount { get; set; }
         public double Amount { get; set; }
+        public double MRP { get; set; }
+        public double ItemDisc { get; set; }
+        public double GstType { get; set; }
+        public double GstAmt { get; set; }
         public int UCode { get; set; }
 
         [XmlArray("Attribute")]
@@ -358,6 +365,8 @@ namespace JSLLite.Models
 
     public class GetAttributes
     {
+        public int HCode { get; set; }
+        public string HName { get; set; }
         public int ATCode { get; set; }
         public string ATName { get; set; }
     }
@@ -421,12 +430,13 @@ namespace JSLLite.Models
         public string Images { get; set; }
     }
 
-    public class Approvel
+    public class VchApprovel
     {
         public int VchCode { get; set; }
-        public int APCode { get; set; }
+        public int SCode { get; set; }
         public string Remarks { get; set; }
         public string ApprovedBy { get; set; }
+        public int ReceiptYesNo { get; set; }
     }
 
     public class VchUpdateList
@@ -540,6 +550,7 @@ namespace JSLLite.Models
         public string MCName { get; set; }
         public string Mobile { get; set; }
         public string Remarks { get; set; }
+        public int Purpose { get; set; }
         public double TQty { get; set; }
         public double TAmt { get; set; }
         public double NetAmt { get; set; }
@@ -595,14 +606,16 @@ namespace JSLLite.Models
     public class PendingPackingItemsDT
     {
         public int SNo { get; set; }
-        public int VchCode { get; set; }
-        public string VchNo { get; set; }
+        //public int VchCode { get; set; }
+        //public string VchNo { get; set; }
         public int ItemCode { get; set; }
         public string ItemName { get; set; }
         public decimal Qty { get; set; }
         public decimal PQty { get; set; }
         public decimal Price { get; set; }
         public decimal Amount { get; set; }
+        public int OrderId { get; set; }
+        public string OrderNo { get; set; }
     }
 
     public class PackingSaved
@@ -622,14 +635,32 @@ namespace JSLLite.Models
 
     public class BItemDetail
     {
-        public int OrderId { get; set; }
-        public string OrderNo { get; set; }
-        public int AccCode { get; set; }
         public int SNo { get; set; }
+        public int RefCode { get; set; }
+        public string RefNo { get; set; }
+        public int AccCode { get; set; }
         public int ItemCode { get; set; }
         public double Qty { get; set; }
         public double Price { get; set; }
         public double Amount { get; set; }
+        public int OrderId { get; set; }
+        public string OrderNo { get; set; }
+    }
+    public class GetPackingVch
+    {
+        public int VchCode { get; set; }
+        public string VchDate { get; set; }
+        public string VchNo { get; set; }
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Mobile { get; set; }
+        public decimal TQty { get; set; }
+        public decimal TAmt { get; set; }
+        public decimal NetAmt { get; set; }
+        public string Status { get; set; }
+        public int InvVchCode { get; set; }
+        public string InvVchDate { get; set; }
+        public string InvVchNo { get; set; }
     }
 
     public class AutoOrderDT
@@ -684,6 +715,21 @@ namespace JSLLite.Models
         public int Status { get; set; }
         public string SName { get; set; }
     }
+
+    public class PaymentReceipt
+    {
+        public int VchCode { get; set; }
+        public string VchNo { get; set; }
+        public string VchDate { get; set; }
+        public int AccCode { get; set; }
+        public string AccName { get; set; }
+        public string Mobile { get; set; }
+        public decimal Amount { get; set; }
+        public string RVchDate { get; set; }
+        public string RVchNo { get; set; }
+        public decimal RAmount { get; set; }
+    }
+
     public class SLogo
     {
         public string CompCode { get; set; }
@@ -785,8 +831,8 @@ namespace JSLLite.Models
     }
     public class AlertOrder
     {
-        public string Message { get; set; }
-        public int Success { get; set; }
+        public int Status { get; set; }
+        public string Msg { get; set; }
         public int OrderId { get; set; }
     }
     public class AlertPayment
@@ -1349,12 +1395,12 @@ namespace JSLLite.Models
 
     public class PaymentDetails
     {
-        public int VchCode { get; set; }
-        public int APCode { get; set; }
+        public int OrderId { get; set; }
+        public string OrderNo { get; set; }
+        public int SCode { get; set; }
         public int PartyCode { get; set; }
         public string PartyName { get; set; }
         public string Mobile { get; set; }
-        public string OrderId { get; set; }
         public string ChequeDate { get; set; }
         public string ChequeNo { get; set; }
         public int PDCReq { get; set; }
@@ -1362,6 +1408,7 @@ namespace JSLLite.Models
         public string ChequeImage { get; set; }
         public string Amount { get; set; }
         public string PaymentType { get; set; }
+        public int PaymentReceipt { get; set; }
         public string Remarks { get; set; }
         public string ApprovedBy { get; set; }
         public List<BillByBillRef> BillByBill { get; set; }
@@ -1822,7 +1869,6 @@ namespace JSLLite.Models
         public double Amount { get; set; }
         public string Image { get; set; }
         public string Exte { get; set; }
-        public int SCode { get; set; } 
         public List<BillByBillRef> BillByBill { get; set; }
     }
 

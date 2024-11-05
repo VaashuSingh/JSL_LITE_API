@@ -10,9 +10,6 @@ namespace BeatAPI
     {
         public static void Register(HttpConfiguration config)
         {
-            //config.MapHttpAttributeRoutes();
-            //EnableCorsAttribute cors = new EnableCorsAttribute("*", "*", "*");
-            //var corsAttr = new EnableCorsAttribute("*", "*", "*");
             config.EnableCors();
             
             config.Routes.MapHttpRoute(

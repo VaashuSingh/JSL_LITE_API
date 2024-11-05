@@ -24,10 +24,16 @@ namespace JSL_LITE.Models
             public int tmpParentGrpCode { get; set; }
             public string ChequePrintName { get; set; }
             public string BrokerName { get; set; }
-
             public bool BrokerAssigned { get; set; }
-            
             public Address Address { get; set; }
+
+            public int SupplierType { get; set; }
+            public string PriceLevel { get; set; }
+            public string PriceLevelForPurc { get; set; }
+            public string TaxType { get; set; }
+            public string ReverseChargeType { get; set; }
+            public string TypeOfDealerGST { get; set; }
+            public string InputType { get; set; }
         }
 
         public class Accounts
@@ -652,13 +658,10 @@ namespace JSL_LITE.Models
             public int ImgType { get; set; }
 
             public string Exte { get; set; }
-
             public string AdharNo { get; set; }
             public string Pass { get; set; }
             public string Deviceid { get; set; }
             public int Itype { get; set; }
-
-
         }
 
         //public class ItemDetail
